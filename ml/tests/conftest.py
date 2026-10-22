@@ -9,6 +9,7 @@ os.environ.pop("LLM_API_KEY", None)
 for var in ("PROFILE_SERVICE_URL", "EVENT_SERVICE_URL", "NEWS_SERVICE_URL", "KNOWLEDGE_SERVICE_URL", "ML_AS_OF"):
     os.environ.pop(var, None)
 
+from fake_company import fake  # noqa: E402,F401  (фикстура: заглушка Company Service)
 from ml.config import load_config  # noqa: E402
 from ml.schemas import ProfileIn  # noqa: E402
 try:  # модули других этапов (services, store) отсутствуют в ветке Этапа 1
