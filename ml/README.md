@@ -60,6 +60,13 @@ curl -X POST localhost:8003/analyze_text -d '{"client_id":"DEMO_1","role":"CFO",
 
 Профиль в Company Service (`libs/go/model/model.go`): `company_id, version, ruleset_version, channels[{name, sector, weight, source, evidence[]}], factor_exposure{}, coverage, built_at, synthetic`; реквизиты, ОКВЭД, продукты лежат в отдельном документе Company. Адаптер: `src/ml/company_format.py` (`adapt_profile`, `export_profile`, `export_company`); экспорт: `python scripts/export_profiles.py --out-dir DIR` (profiles.json для `ReplaceProfile`, companies.csv для импорта). `version` в хранилище должен быть last+1. В Company Service не хранятся buyers, suppliers, concentration, commodities, а канала «аффилированный» нет; факторы (`factor_exposure`) пока пусты. Список расхождений: `TODO(align)` в `company_format.py`.
 
+## Пороги профиля
+
+Значения из `config/config.yaml`:
+- `profile.revenue_threshold` = 15 млрд руб. — в профили попадают клиенты с выручкой не ниже порога.
+- `profile.concentration_min_counterparties` = 5 (строк в таблице платежей = контрагенты, `PAY_CNT` не используется) и `profile.concentration_min_coverage` = 0.3 — концентрация стороны считается при обоих условиях.
+- Каналы «спрос»/«предложение» по покрытию платежей (`ranking.coverage_*`): < 0.3 — только матрица секторов; 0.3–0.5 — платежи и матрица (берётся большее); ≥ 0.5 — только платежи.
+
 ## Что в репозитории НЕ настоящее (важно)
 
 - `tests/fixtures/bank_analytics/*.txt` — **иллюстративные тексты** под названия документов из приложения 2, не аналитика банка. Реальные PDF положить в `$DATA_DIR/bank_analytics/` и запустить `ingest_bank_docs.py`.
