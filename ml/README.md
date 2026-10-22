@@ -62,6 +62,32 @@ curl -X POST localhost:8003/analyze_text -d '{"client_id":"DEMO_1","role":"CFO",
 
 Профиль в Company Service (`libs/go/model/model.go`): `company_id, version, ruleset_version, channels[{name, sector, weight, source, evidence[]}], factor_exposure{}, coverage, built_at, synthetic`; реквизиты, ОКВЭД, продукты лежат в отдельном документе Company. Адаптер: `src/ml/company_format.py` (`adapt_profile`, `export_profile`, `export_company`); экспорт: `python scripts/export_profiles.py --out-dir DIR` (profiles.json для `ReplaceProfile`, companies.csv для импорта). `version` в хранилище должен быть last+1. В Company Service не хранятся buyers, suppliers, concentration, commodities, а канала «аффилированный» нет; факторы (`factor_exposure`) пока пусты. Список расхождений: `TODO(align)` в `company_format.py`.
 
+## Выгрузка профилей
+
+**1. Получить `profiles.json`.** Профили строятся из платежей и справочника клиентов, затем экспортируются в формат Company Service:
+```
+python scripts/build_profiles.py --data-dir <DATA_DIR>          # -> data/profiles.json (профили ML)
+python scripts/export_profiles.py --out-dir export_company_service
+```
+Экспорт даёт `profiles.json` (список профилей для `ReplaceProfile`), `companies.json` (все 7 продуктов) и `companies.csv` (CSV-импорт знает только loan, leasing, deposit). `features` в `profiles.json` попадает только при `export.include_features: true` (см. «Поле features профиля»).
+
+**2. Загрузить в Company Service** (gRPC, `alfa.v1.CompanyService`: `GetProfile`, затем `ReplaceProfile` с версией last+1):
+```
+python scripts/push_profiles.py                       # dry-run (по умолчанию): читает GetProfile, ничего не записывает, печатает план
+python scripts/push_profiles.py --apply               # реальная отправка ReplaceProfile
+python scripts/push_profiles.py --src FILE --address host:port
+```
+- Адрес: `COMPANY_SERVICE_ADDR` или `company_service.address` (по умолчанию `company-service:9090`).
+- Профиль, который не отличается от сохранённого (без учёта `version` и `built_at`), пропускается: повторный запуск не плодит версии. Ошибка по одному клиенту не останавливает остальных; при ошибках код возврата 1. Вывод ограничен 50 строками.
+- Скрипт уважает `export.include_features`: при `false` ключ `features` удаляется из отправляемого профиля, даже если он есть в файле (`--include-features` включает отправку). Пока бэкенд хранит профиль без `features`, поле при сравнении не учитывается.
+- Тесты используют заглушку gRPC-сервера в памяти; реальный сервис не вызывается.
+
+**Что открыто (`TODO(align)`)**
+- «Подписанный контекст»: что это, как получить и в каком metadata-заголовке слать — не известно. Значение берётся из `COMPANY_SIGNED_CONTEXT`, имя заголовка — `company_service.signed_context_header` (пусто — контекст не отправляется). Без него реальный `ReplaceProfile` может быть отклонён (проверено только на заглушке).
+- Поле `features`: в `model.Profile`, OpenAPI и `ReadImport` его нет, поэтому выгрузка выключена флагом. Названия полей согласованы по примеру бэкенда (доли секторов, `top1_share`, `top5_share`, `hhi`), но фактически не проверены на реальном сервисе.
+- TLS для gRPC-канала не согласован (канал без шифрования).
+- `ruleset_version` (`ml-stage1-v1`), `name` компании (= `client_id`), `factor_exposure` (пока `{}`), coverage одним числом (минимум по сторонам).
+
 ## Поле features профиля
 `features` = `{"buyers": {...}|null, "suppliers": {...}|null}`: у стороны `sector_shares` [{sector, share}] и `concentration` {top1_share, top5_share, hhi}. Расчёт: `src/ml/profile/features.py`; сырьё и coverage в features не входят. Округление (решение согласовано с бэкендом): `sector_shares.share` - 3 знака, `top1_share`/`top5_share`/`hhi` - 4 знака.
 
