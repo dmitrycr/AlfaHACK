@@ -51,6 +51,11 @@ knowledge:
 tagging:
   lead_chars: 700
   min_text_chars: 20
+company_service:
+  address: company-service:9090          # gRPC; переопределяется COMPANY_SERVICE_ADDR
+  timeout_s: 10
+  signed_context_header: ""               # TODO(align): имя metadata-заголовка для подписанного контекста неизвестно; пусто - не отправляем
+  # значение подписанного контекста - только из окружения COMPANY_SIGNED_CONTEXT, в конфиге и логах не хранится
 export:
   include_features: false    # TODO(align): false, пока в Company Service нет поля features (model.Profile, OpenAPI, ReadImport)
 profile:

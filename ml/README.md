@@ -28,6 +28,8 @@ uvicorn ml.services.agent_app:app --port 8003     # ещё: ranking_app (8001), 
 | `LLM_BASE_URL` | адрес OpenAI-совместимого API (`POST {base}/chat/completions`) — `TODO(align)` |
 | `DATA_DIR` | каталог с `df_Uid_data_hack.csv`, `df_Uid_payment_hack.csv`, `df_Fid_Uid_link_hack.csv`, `bank_analytics/` |
 | `PROFILE_SERVICE_URL`, `EVENT_SERVICE_URL`, `NEWS_SERVICE_URL`, `KNOWLEDGE_SERVICE_URL` | HTTP-клиенты портов; не заданы — фикстурные заглушки из `tests/fixtures/` |
+| `COMPANY_SERVICE_ADDR` | адрес gRPC Company Service (по умолчанию `company-service:9090`) |
+| `COMPANY_SIGNED_CONTEXT` | «подписанный контекст» для Company Service, только из окружения, в логи не пишется; `TODO(align)`: что это и в каком заголовке слать (`company_service.signed_context_header`) неизвестно |
 | `ML_AS_OF` | «текущий момент» для свежести (по умолчанию: реальное время; для фикстурных новостей — дата последней новости) |
 
 ## Пример запросов

@@ -14,3 +14,7 @@ openpyxl==3.1.5
 # опционально: лемматизация (при неудаче установки работает запасной стеммер)
 pymorphy3==2.0.6
 pymorphy3-dicts-ru==2.4.417150.4580142
+# gRPC-клиент Company Service (стабы: scripts/gen_proto.py; protobuf должен быть не старше версии генератора)
+grpcio==1.84.1
+grpcio-tools==1.84.1
+protobuf==7.36.2

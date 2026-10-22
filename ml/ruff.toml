@@ -1,6 +1,6 @@
 line-length = 130
 target-version = "py311"
-extend-exclude = ["data", "reports", ".cache"]
+extend-exclude = ["src/ml/grpc_gen", "data", "reports", ".cache"]
 
 [lint]
 select = ["E", "F", "W", "I"]

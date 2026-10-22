@@ -1,0 +1,29 @@
+syntax = "proto3";
+package alfa.v1;
+option go_package = "alfa.local/shared/rpc";
+
+// JSON payloads conform to contracts/events/backend.schema.json or OpenAPI schemas.
+message Request {
+  string id = 1;
+  string company_id = 2;
+  bytes payload = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+}
+message Response { bytes payload = 1; }
+service CompanyService {
+  rpc GetCompany(Request) returns (Response);
+  rpc GetProfile(Request) returns (Response);
+  rpc ReplaceProfile(Request) returns (Response);
+}
+service NewsService {
+  rpc ListArticles(Request) returns (Response);
+  rpc GetArticle(Request) returns (Response);
+  rpc Submit(Request) returns (Response);
+  rpc GetSubmission(Request) returns (Response);
+}
+service EventService {
+  rpc ListEvents(Request) returns (Response);
+  rpc GetEvent(Request) returns (Response);
+}
+service AnalyticsService { rpc GetSummary(Request) returns (Response); }
