@@ -32,7 +32,7 @@ def export_company(p: ProfileIn, name: str | None = None) -> dict:
     """ProfileIn -> документ Company (model.Company). TODO(align): ML не знает name, по умолчанию = client_id."""
     out = {"id": p.client_id, "name": name or p.client_id, "okved": _cs_okved(p.okved), "sector": p.sector,
            "region": p.region,
-           "products": {k: bool(v) for k, v in p.products.items()},   # TODO(align): CSV-импорт знает только loan/leasing/deposit
+           "products": {k: bool(v) for k, v in p.products.items()},   # все 7 продуктов; TODO(align): CSV-импорт Company Service знает только loan/leasing/deposit (лишние колонки отвергает)
            "ved": {"fts_flag": bool(p.ved.get("fts_flag")), "country": p.ved.get("country")}}
     if p.revenue is not None:
         out["revenue_minor"] = round(p.revenue * MINOR_UNITS)
@@ -42,7 +42,7 @@ def export_company(p: ProfileIn, name: str | None = None) -> dict:
 def export_profile(p: ProfileIn, *, version: int | None = None, ruleset_version: str = RULESET_VERSION,
                    built_at: str | datetime | None = None, synthetic: bool = False) -> dict:
     """ProfileIn -> документ Profile Company Service (ReplaceProfile). version должен быть last+1 в хранилище.
-    Не переносится (в Company Service нет полей): buyers, suppliers, concentration, commodities."""
+    Не переносится (в Company Service нет полей, см. export_extra): buyers, suppliers, concentration, commodities."""
     ch: dict[tuple[str, str], dict] = {}
     for c in p.channels:
         name = CHANNEL_TO_CS.get(c.name)
@@ -62,6 +62,16 @@ def export_profile(p: ProfileIn, *, version: int | None = None, ruleset_version:
             "factor_exposure": {},           # TODO(align): факторы (курс, сырьё, логистика, спрос) - ключи не согласованы
             "coverage": min(cov) if cov else None,   # TODO(align): одно число; берём минимум покрытия покупателей/поставщиков
             "built_at": t if isinstance(t, str) else t.strftime("%Y-%m-%dT%H:%M:%SZ"), "synthetic": synthetic}
+
+
+def export_extra(p: ProfileIn) -> dict:
+    """Поля, которых нет в Company Service: доли покупателей/поставщиков, концентрация, сырьё, coverage по сторонам.
+    Уходят в profiles_extra.json, в payload ReplaceProfile не попадают. TODO(align): названия полей бэкенд не назвал."""
+    return {"buyers": dict(p.buyers),                  # TODO(align): сектор -> доля оборота
+            "suppliers": dict(p.suppliers),            # TODO(align)
+            "concentration": p.concentration,          # TODO(align): {"share","sector","region"} или null
+            "commodities": list(p.commodities),        # TODO(align)
+            "coverage": {"buyers": p.coverage.get("buyers"), "suppliers": p.coverage.get("suppliers")}}  # TODO(align)
 
 
 def validate_company_profile(doc: dict) -> list[str]:

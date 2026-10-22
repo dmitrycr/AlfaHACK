@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from ml.company_format import (CHANNEL_TO_CS, SOURCE_TO_CS, adapt_profile, export_company, export_profile,
+from ml.company_format import (CHANNEL_TO_CS, SOURCE_TO_CS, adapt_profile, export_company, export_extra, export_profile,
                       validate_company_profile)
 from ml.schemas import Channel, ProfileIn
 
@@ -89,3 +89,36 @@ def test_validator_rejects_bad():
     base = {"company_id": "c", "version": 1, "ruleset_version": "r", "built_at": "t", "factor_exposure": {},
             "coverage": None, "channels": [{"name": "отраслевой", "weight": 1, "source": "data", "evidence": []}]}
     assert validate_company_profile(base)
+
+
+def test_export_all_seven_products(demo):
+    seven = {"loan", "leasing", "guarantee", "deposit", "factoring", "rko", "zpp"}
+    for p in demo:
+        assert set(export_company(p)["products"]) == seven
+
+
+def test_extra_separate_from_payload(demo):
+    p = demo[0].model_copy(update={"buyers": {"Строительство": 0.4}, "suppliers": {"Металлургия": 0.3},
+                                   "concentration": {"share": 0.5, "sector": "Строительство", "region": None},
+                                   "commodities": ["сталь"], "coverage": {"buyers": 0.8, "suppliers": 0.6}})
+    extra = export_extra(p)
+    assert extra["coverage"] == {"buyers": 0.8, "suppliers": 0.6} and extra["buyers"] == {"Строительство": 0.4}
+    assert extra["commodities"] == ["сталь"] and extra["concentration"]["share"] == 0.5
+    doc = export_profile(p)
+    assert not {"buyers", "suppliers", "concentration", "commodities"} & set(doc)
+    assert doc["coverage"] == 0.6 and validate_company_profile(doc) == []
+
+
+def test_export_script_writes_extra_and_csv(demo, tmp_path):
+    import subprocess
+    import sys
+    import pandas as pd
+    root = Path(__file__).parents[1]
+    subprocess.run([sys.executable, str(root / "scripts" / "export_profiles.py"), "--src", str(FX),
+                    "--out-dir", str(tmp_path)], check=True, cwd=root)
+    extra = json.loads((tmp_path / "profiles_extra.json").read_text(encoding="utf-8"))
+    prof = json.loads((tmp_path / "profiles.json").read_text(encoding="utf-8"))
+    assert set(extra) == {d["company_id"] for d in prof} == {p.client_id for p in demo}
+    assert all(set(v) == {"buyers", "suppliers", "concentration", "commodities", "coverage"} for v in extra.values())
+    assert all("аффилированный" not in json.dumps(d, ensure_ascii=False) for d in prof)
+    assert len(pd.read_csv(tmp_path / "companies.csv").columns) == 13
