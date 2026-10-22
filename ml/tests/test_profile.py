@@ -1,5 +1,6 @@
 import json
 
+import pandas as pd
 import pytest
 
 from ml.config import load_config
@@ -67,8 +68,10 @@ def test_intragroup_excluded_but_measured(builder):
     assert sum(p.buyers.values()) <= 1.0
 
 
-def test_concentration(builder):
-    p = builder.build_profile("U_4909")
+def test_concentration(synth):
+    # в синтетике у клиентов по 3-9 платежей на сторону: для проверки самой доли порог платежей снижаем
+    b = ProfileBuilder(synth, load_config(overrides={"profile": {"concentration_min_payments": 1}}))
+    p = b.build_profile("U_4909")
     assert p.concentration["share"] > 0.4 and p.concentration["sector"] == "Машиностроение и промышленность"
 
 
@@ -113,12 +116,25 @@ def test_client_with_payments_on_one_side_only(builder):
     assert p.concentration is not None
 
 
+@pytest.mark.parametrize("n, known_share, has_top", [(1, 1.0, False), (4, 1.0, False), (5, 0.2, False), (5, 0.5, True)])
+def test_concentration_needs_payments_and_coverage(builder, n, known_share, has_top):
+    client = "U_5658"
+    known = next(c for c in builder.sector if builder.group.get(c) != builder.group[client])
+    amts = [100.0 * known_share] + [100.0 * (1 - known_share) / (n - 1) if n > 1 else 0.0] * (n - 1)
+    cps = [known] + ["U_UNKNOWN"] * (n - 1)
+    rows = pd.DataFrame({"PAYER": cps, "BENEFICIARY": client, "PAY_AMT": amts})
+    rows = rows[rows["PAY_AMT"] > 0] if n == 1 else rows
+    res = builder._side(client, rows, "PAYER")
+    assert res["coverage"] == pytest.approx(known_share)
+    assert (res["top"] is not None) == has_top
+
+
 def test_threshold_and_build_all(builder):
     above, below = builder.clients_above_threshold()
     assert set(above) == {"U_4909", "U_5639", "U_5658", "U_9748", "U_GRP1", "U_25835"} and "U_LOW1" in below
     res = builder.build_all()
     assert set(res["profiles"]) == set(above) and res["report"]["clients"] == 6
-    assert "share_both_cov_ge_0.5" in res["report"] and len(res["report"]["top5_concentration"]) == 5
+    assert "share_both_cov_ge_0.5" in res["report"] and 0 < len(res["report"]["top5_concentration"]) <= 5
 
 
 def test_cache_recalculates_only_on_change(synth, tmp_path):
