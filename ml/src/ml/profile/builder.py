@@ -123,7 +123,7 @@ class ProfileBuilder:
         """rows: платежи по одной стороне клиента. cp_col: колонка контрагента."""
         g = self.group.get(client)
         intra_mask = rows[cp_col].map(lambda x: (self.group.get(x) == g and self.gsize.get(x, 1) > 1)
-                                      if x in self.group else False)
+                                      if x in self.group else False).astype(bool)  # пустой rows -> не object-маска
         total_all = float(rows["PAY_AMT"].sum())
         intragroup = float(rows.loc[intra_mask, "PAY_AMT"].sum())
         rows = rows[~intra_mask]

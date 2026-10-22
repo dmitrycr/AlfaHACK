@@ -88,6 +88,31 @@ def test_channels_by_rules(builder):
     assert {c.name: c for c in p3.channels}["финансовый"].weight == 0.4        # только депозит
 
 
+def _assert_matrix_channels(p):
+    assert not any(c.name in ("спрос", "предложение") and c.source == "data" for c in p.channels)
+    assert any(c.source == "matrix" for c in p.channels)
+
+
+def test_client_without_any_payments(builder):
+    empty = {"benef": {}, "payer": {}}
+    p = builder.build_profile("U_5658", empty)                               # раньше: KeyError 'PAY_AMT'
+    assert p.coverage["buyers"] == 0.0 and p.coverage["suppliers"] == 0.0
+    assert p.buyers == {} and p.suppliers == {} and p.concentration is None
+    _assert_matrix_channels(p)
+
+
+def test_client_with_payments_on_one_side_only(builder):
+    pay = builder.d.pay
+    only_buyers = {"benef": {"U_5658": pay[pay["BENEFICIARY"] == "U_5658"]}, "payer": {}}
+    p = builder.build_profile("U_5658", only_buyers)
+    assert p.coverage["buyers"] > 0.8 and p.buyers
+    assert p.coverage["suppliers"] == 0.0 and p.suppliers == {}
+    only_suppliers = {"benef": {}, "payer": {"U_5658": pay[pay["PAYER"] == "U_5658"]}}
+    p = builder.build_profile("U_5658", only_suppliers)
+    assert p.coverage["buyers"] == 0.0 and p.buyers == {} and p.suppliers
+    assert p.concentration is not None
+
+
 def test_threshold_and_build_all(builder):
     above, below = builder.clients_above_threshold()
     assert set(above) == {"U_4909", "U_5639", "U_5658", "U_9748", "U_GRP1", "U_25835"} and "U_LOW1" in below
