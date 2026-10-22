@@ -1,0 +1,64 @@
+paths:
+  data_dir: ${DATA_DIR}              # CSV разделитель ';', bank_analytics/ внутри
+  store: .cache/ml_store.sqlite      # кеш LLM, журнал, бюджет, кеш тегов и карточек
+  bank_chunks: data/bank_chunks.jsonl
+  profiles: data/profiles.json
+  fixtures: tests/fixtures
+  reports: reports
+llm:
+  mode: mock                 # mock | http (переопределяется LLM_MODE)
+  base_url: ${LLM_BASE_URL}  # TODO(align): адрес и формат запроса у организаторов
+  timeout_s: 60
+  net_retries: 2
+  retry_pause_s: 1.0
+  models:
+    tagging: gemma-4-26b-a4b
+    link_check: gemma-4-26b-a4b
+    card: glm-5.3-flash
+    selfcheck: gemma-4-26b-a4b
+    chat: qwen3.6-35b-a3b
+    profile_hypothesis: qwen3.6-35b-a3b
+  cheap_model: gemma-4-26b-a4b   # режим деградации
+  fallback: {tagging: qwen3.6-35b-a3b, card: deepseek-v4.1-flash}
+  daily_limit_rub: 500
+  degrade_at: 0.8
+  cache_only_at: 0.95
+  prices: {}                 # TODO(align): {model: {in: руб за 1000 токенов, out: ...}}
+ranking:
+  channels_enabled: [отраслевой, конкурент, спрос, предложение, финансовый, валютный, сырьевой, региональный, регуляторный]
+  default_weights: {отраслевой: 1.0, конкурент: 0.7, финансовый: 0.2, валютный: 0.2, сырьевой: 0.0, региональный: 0.5, регуляторный: 0.6}
+  threshold: 0.15
+  threshold_step: 0.05
+  threshold_min: 0.05
+  min_events: 5
+  freshness_steps: [[1, 1.0], [3, 0.8], [7, 0.5], [14, 0.3], [9999, 0.15]]
+  payments_F_cap: 0.40
+  concentration_threshold: 0.40
+  concentration_boost: 1.2
+  coverage_payments_only: 0.50
+  coverage_matrix_only: 0.30
+agent:
+  top_n: 10
+  degraded_top_n: 5
+  max_retries_per_step: 2
+  collapsed_max_words: 120
+  card_cache: true
+knowledge:
+  chunk_chars: [500, 800]
+  overlap: 100
+  k: 3
+  min_score: 0.5             # подобрано по tests/fixtures/rag_queries.csv
+tagging:
+  lead_chars: 700
+  min_text_chars: 20
+profile:
+  revenue_threshold: 15000000000   # рубли, допущение
+  concentration_threshold: 0.40
+  channel_weights:
+    отраслевой: 1.0
+    конкурент: 0.7
+    сырьевой: 0.7
+    региональный: 0.5
+    регуляторный: 0.6
+    валютный: {fts: 0.9, none: 0.2}
+    финансовый: {loan_or_leasing: 0.9, guarantee_or_factoring: 0.6, deposit_only: 0.4, none: 0.2}

@@ -1,0 +1,607 @@
+{
+ "profiles": {
+  "DEMO_1": {
+   "client_id": "DEMO_1",
+   "sector": "Оптовая торговля",
+   "okved": {
+    "section": "G",
+    "class": "46",
+    "group": "46.5"
+   },
+   "region": "Москва",
+   "revenue": 20000000000.0,
+   "products": {
+    "loan": true,
+    "leasing": true,
+    "guarantee": false,
+    "deposit": false,
+    "factoring": false,
+    "rko": true,
+    "zpp": false
+   },
+   "ved": {
+    "fts_flag": false,
+    "country": null
+   },
+   "channels": [
+    {
+     "name": "отраслевой",
+     "weight": 1.0,
+     "source": "data",
+     "evidence": "ОКВЭД 46.5 -> Оптовая торговля",
+     "sector": null
+    },
+    {
+     "name": "конкурент",
+     "weight": 0.7,
+     "source": "data",
+     "evidence": "сектор Оптовая торговля",
+     "sector": null
+    },
+    {
+     "name": "финансовый",
+     "weight": 0.9,
+     "source": "data",
+     "evidence": "есть кредит и лизинг",
+     "sector": null
+    },
+    {
+     "name": "валютный",
+     "weight": 0.2,
+     "source": "data",
+     "evidence": "FTS_FLAG = 0",
+     "sector": null
+    },
+    {
+     "name": "сырьевой",
+     "weight": 0.7,
+     "source": "data",
+     "evidence": "сырьё сектора: нефть",
+     "sector": null
+    },
+    {
+     "name": "региональный",
+     "weight": 0.5,
+     "source": "data",
+     "evidence": "регион Москва",
+     "sector": null
+    },
+    {
+     "name": "регуляторный",
+     "weight": 0.6,
+     "source": "data",
+     "evidence": "отрасль Оптовая торговля",
+     "sector": null
+    },
+    {
+     "name": "спрос",
+     "weight": 0.85,
+     "source": "data",
+     "evidence": "34% оборота — контрагенты сектора Строительство",
+     "sector": "Строительство"
+    },
+    {
+     "name": "спрос",
+     "weight": 0.3,
+     "source": "data",
+     "evidence": "12% оборота — контрагенты сектора Недвижимость",
+     "sector": "Недвижимость"
+    },
+    {
+     "name": "спрос",
+     "weight": 0.125,
+     "source": "data",
+     "evidence": "5% оборота — контрагенты сектора Розничная торговля",
+     "sector": "Розничная торговля"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.5,
+     "source": "data",
+     "evidence": "20% оборота — контрагенты сектора Металлургия и добыча",
+     "sector": "Металлургия и добыча"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.25,
+     "source": "data",
+     "evidence": "10% оборота — контрагенты сектора Транспорт и логистика",
+     "sector": "Транспорт и логистика"
+    }
+   ],
+   "buyers": {
+    "Строительство": 0.34,
+    "Недвижимость": 0.12,
+    "Розничная торговля": 0.05
+   },
+   "suppliers": {
+    "Металлургия и добыча": 0.2,
+    "Транспорт и логистика": 0.1
+   },
+   "concentration": null,
+   "commodities": [
+    "нефть"
+   ],
+   "coverage": {
+    "buyers": 0.62,
+    "suppliers": 0.55
+   },
+   "version": 1
+  },
+  "DEMO_2": {
+   "client_id": "DEMO_2",
+   "sector": "Металлургия и добыча",
+   "okved": {
+    "section": "C",
+    "class": "24",
+    "group": "24.1"
+   },
+   "region": "Липецкая область",
+   "revenue": 30000000000.0,
+   "products": {
+    "loan": false,
+    "leasing": false,
+    "guarantee": true,
+    "deposit": false,
+    "factoring": false,
+    "rko": true,
+    "zpp": false
+   },
+   "ved": {
+    "fts_flag": true,
+    "country": "Китай"
+   },
+   "channels": [
+    {
+     "name": "отраслевой",
+     "weight": 1.0,
+     "source": "data",
+     "evidence": "ОКВЭД 24.1 -> Металлургия и добыча",
+     "sector": null
+    },
+    {
+     "name": "конкурент",
+     "weight": 0.7,
+     "source": "data",
+     "evidence": "сектор Металлургия и добыча",
+     "sector": null
+    },
+    {
+     "name": "финансовый",
+     "weight": 0.6,
+     "source": "data",
+     "evidence": "есть гарантии",
+     "sector": null
+    },
+    {
+     "name": "валютный",
+     "weight": 0.9,
+     "source": "data",
+     "evidence": "FTS_FLAG = 1",
+     "sector": null
+    },
+    {
+     "name": "сырьевой",
+     "weight": 0.7,
+     "source": "data",
+     "evidence": "сырьё сектора: газ, золото, сталь, уголь",
+     "sector": null
+    },
+    {
+     "name": "региональный",
+     "weight": 0.5,
+     "source": "data",
+     "evidence": "регион Липецкая область",
+     "sector": null
+    },
+    {
+     "name": "регуляторный",
+     "weight": 0.6,
+     "source": "data",
+     "evidence": "отрасль Металлургия и добыча",
+     "sector": null
+    },
+    {
+     "name": "спрос",
+     "weight": 0.625,
+     "source": "data",
+     "evidence": "25% оборота — контрагенты сектора Машиностроение и промышленность",
+     "sector": "Машиностроение и промышленность"
+    },
+    {
+     "name": "спрос",
+     "weight": 0.45,
+     "source": "data",
+     "evidence": "18% оборота — контрагенты сектора Строительство",
+     "sector": "Строительство"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.6,
+     "source": "matrix",
+     "evidence": "матрица связей: Металлургия и добыча -> Энергетика (поставщиков)",
+     "sector": "Энергетика"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.6,
+     "source": "matrix",
+     "evidence": "матрица связей: Металлургия и добыча -> Транспорт и логистика (поставщиков)",
+     "sector": "Транспорт и логистика"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.4,
+     "source": "matrix",
+     "evidence": "матрица связей: Металлургия и добыча -> Нефть и газ (поставщиков)",
+     "sector": "Нефть и газ"
+    }
+   ],
+   "buyers": {
+    "Машиностроение и промышленность": 0.25,
+    "Строительство": 0.18
+   },
+   "suppliers": {
+    "Энергетика": 0.15,
+    "Транспорт и логистика": 0.2,
+    "Нефть и газ": 0.08
+   },
+   "concentration": {
+    "share": 0.45,
+    "sector": "Машиностроение и промышленность",
+    "region": "Челябинская область"
+   },
+   "commodities": [
+    "газ",
+    "золото",
+    "сталь",
+    "уголь"
+   ],
+   "coverage": {
+    "buyers": 0.5,
+    "suppliers": 0.4
+   },
+   "version": 1
+  },
+  "DEMO_3": {
+   "client_id": "DEMO_3",
+   "sector": "Агро и пищевая промышленность",
+   "okved": {
+    "section": "A",
+    "class": "01",
+    "group": "01.1"
+   },
+   "region": "Краснодарский край",
+   "revenue": 18000000000.0,
+   "products": {
+    "loan": false,
+    "leasing": false,
+    "guarantee": false,
+    "deposit": true,
+    "factoring": true,
+    "rko": true,
+    "zpp": false
+   },
+   "ved": {
+    "fts_flag": true,
+    "country": "Турция"
+   },
+   "channels": [
+    {
+     "name": "отраслевой",
+     "weight": 1.0,
+     "source": "data",
+     "evidence": "ОКВЭД 01.1 -> Агро и пищевая промышленность",
+     "sector": null
+    },
+    {
+     "name": "конкурент",
+     "weight": 0.7,
+     "source": "data",
+     "evidence": "сектор Агро и пищевая промышленность",
+     "sector": null
+    },
+    {
+     "name": "финансовый",
+     "weight": 0.6,
+     "source": "data",
+     "evidence": "есть факторинг",
+     "sector": null
+    },
+    {
+     "name": "валютный",
+     "weight": 0.9,
+     "source": "data",
+     "evidence": "FTS_FLAG = 1",
+     "sector": null
+    },
+    {
+     "name": "сырьевой",
+     "weight": 0.7,
+     "source": "data",
+     "evidence": "сырьё сектора: зерно, удобрения",
+     "sector": null
+    },
+    {
+     "name": "региональный",
+     "weight": 0.5,
+     "source": "data",
+     "evidence": "регион Краснодарский край",
+     "sector": null
+    },
+    {
+     "name": "регуляторный",
+     "weight": 0.6,
+     "source": "data",
+     "evidence": "отрасль Агро и пищевая промышленность",
+     "sector": null
+    },
+    {
+     "name": "спрос",
+     "weight": 0.75,
+     "source": "data",
+     "evidence": "30% оборота — контрагенты сектора Розничная торговля",
+     "sector": "Розничная торговля"
+    },
+    {
+     "name": "спрос",
+     "weight": 0.55,
+     "source": "data",
+     "evidence": "22% оборота — контрагенты сектора Оптовая торговля",
+     "sector": "Оптовая торговля"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.8,
+     "source": "matrix",
+     "evidence": "матрица связей: Агро и пищевая промышленность -> Химия и удобрения (поставщиков)",
+     "sector": "Химия и удобрения"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.5,
+     "source": "matrix",
+     "evidence": "матрица связей: Агро и пищевая промышленность -> Машиностроение и промышленность (поставщиков)",
+     "sector": "Машиностроение и промышленность"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.4,
+     "source": "matrix",
+     "evidence": "матрица связей: Агро и пищевая промышленность -> Нефть и газ (поставщиков)",
+     "sector": "Нефть и газ"
+    }
+   ],
+   "buyers": {
+    "Розничная торговля": 0.3,
+    "Оптовая торговля": 0.22
+   },
+   "suppliers": {
+    "Химия и удобрения": 0.25
+   },
+   "concentration": null,
+   "commodities": [
+    "зерно",
+    "удобрения"
+   ],
+   "coverage": {
+    "buyers": 0.52,
+    "suppliers": 0.3
+   },
+   "version": 1
+  },
+  "DEMO_4": {
+   "client_id": "DEMO_4",
+   "sector": "Розничная торговля",
+   "okved": {
+    "section": "G",
+    "class": "47",
+    "group": "47.1"
+   },
+   "region": "Санкт-Петербург",
+   "revenue": 16000000000.0,
+   "products": {
+    "loan": false,
+    "leasing": false,
+    "guarantee": false,
+    "deposit": true,
+    "factoring": false,
+    "rko": true,
+    "zpp": false
+   },
+   "ved": {
+    "fts_flag": false,
+    "country": null
+   },
+   "channels": [
+    {
+     "name": "отраслевой",
+     "weight": 1.0,
+     "source": "data",
+     "evidence": "ОКВЭД 47.1 -> Розничная торговля",
+     "sector": null
+    },
+    {
+     "name": "конкурент",
+     "weight": 0.7,
+     "source": "data",
+     "evidence": "сектор Розничная торговля",
+     "sector": null
+    },
+    {
+     "name": "финансовый",
+     "weight": 0.4,
+     "source": "data",
+     "evidence": "только депозит",
+     "sector": null
+    },
+    {
+     "name": "валютный",
+     "weight": 0.2,
+     "source": "data",
+     "evidence": "FTS_FLAG = 0",
+     "sector": null
+    },
+    {
+     "name": "региональный",
+     "weight": 0.5,
+     "source": "data",
+     "evidence": "регион Санкт-Петербург",
+     "sector": null
+    },
+    {
+     "name": "регуляторный",
+     "weight": 0.6,
+     "source": "data",
+     "evidence": "отрасль Розничная торговля",
+     "sector": null
+    },
+    {
+     "name": "предложение",
+     "weight": 0.8,
+     "source": "matrix",
+     "evidence": "матрица связей: Розничная торговля -> Агро и пищевая промышленность (поставщиков)",
+     "sector": "Агро и пищевая промышленность"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.7,
+     "source": "matrix",
+     "evidence": "матрица связей: Розничная торговля -> Оптовая торговля (поставщиков)",
+     "sector": "Оптовая торговля"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.5,
+     "source": "matrix",
+     "evidence": "матрица связей: Розничная торговля -> Недвижимость (поставщиков)",
+     "sector": "Недвижимость"
+    }
+   ],
+   "buyers": {},
+   "suppliers": {
+    "Агро и пищевая промышленность": 0.1
+   },
+   "concentration": null,
+   "commodities": [],
+   "coverage": {
+    "buyers": 0.0,
+    "suppliers": 0.2
+   },
+   "version": 1
+  },
+  "DEMO_5": {
+   "client_id": "DEMO_5",
+   "sector": "Строительство",
+   "okved": {
+    "section": "F",
+    "class": "41",
+    "group": "41.2"
+   },
+   "region": "Москва",
+   "revenue": 25000000000.0,
+   "products": {
+    "loan": true,
+    "leasing": true,
+    "guarantee": true,
+    "deposit": false,
+    "factoring": false,
+    "rko": true,
+    "zpp": false
+   },
+   "ved": {
+    "fts_flag": false,
+    "country": null
+   },
+   "channels": [
+    {
+     "name": "отраслевой",
+     "weight": 1.0,
+     "source": "data",
+     "evidence": "ОКВЭД 41.2 -> Строительство",
+     "sector": null
+    },
+    {
+     "name": "конкурент",
+     "weight": 0.7,
+     "source": "data",
+     "evidence": "сектор Строительство",
+     "sector": null
+    },
+    {
+     "name": "финансовый",
+     "weight": 0.9,
+     "source": "data",
+     "evidence": "есть кредит и лизинг",
+     "sector": null
+    },
+    {
+     "name": "валютный",
+     "weight": 0.2,
+     "source": "data",
+     "evidence": "FTS_FLAG = 0",
+     "sector": null
+    },
+    {
+     "name": "сырьевой",
+     "weight": 0.7,
+     "source": "data",
+     "evidence": "сырьё сектора: сталь",
+     "sector": null
+    },
+    {
+     "name": "региональный",
+     "weight": 0.5,
+     "source": "data",
+     "evidence": "регион Москва",
+     "sector": null
+    },
+    {
+     "name": "регуляторный",
+     "weight": 0.6,
+     "source": "data",
+     "evidence": "отрасль Строительство",
+     "sector": null
+    },
+    {
+     "name": "спрос",
+     "weight": 1.0,
+     "source": "data",
+     "evidence": "50% оборота — контрагенты сектора Недвижимость",
+     "sector": "Недвижимость"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.75,
+     "source": "data",
+     "evidence": "30% оборота — контрагенты сектора Металлургия и добыча",
+     "sector": "Металлургия и добыча"
+    },
+    {
+     "name": "предложение",
+     "weight": 0.5,
+     "source": "data",
+     "evidence": "20% оборота — контрагенты сектора Оптовая торговля",
+     "sector": "Оптовая торговля"
+    }
+   ],
+   "buyers": {
+    "Недвижимость": 0.5
+   },
+   "suppliers": {
+    "Металлургия и добыча": 0.3,
+    "Оптовая торговля": 0.2
+   },
+   "concentration": null,
+   "commodities": [
+    "сталь"
+   ],
+   "coverage": {
+    "buyers": 0.5,
+    "suppliers": 0.5
+   },
+   "version": 1
+  }
+ },
+ "_note": "вымышленные демо-профили, не данные кейса"
+}
