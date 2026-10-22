@@ -144,7 +144,7 @@ class ProfileBuilder:
         res["unknown_share"] = unknown / total
         res["coverage"] = 1.0 - unknown / total
         pc = self.cfg["profile"]
-        if len(rows) >= int(pc["concentration_min_payments"]) and res["coverage"] >= float(pc["concentration_min_coverage"]):
+        if len(rows) >= int(pc["concentration_min_counterparties"]) and res["coverage"] >= float(pc["concentration_min_coverage"]):
             top_cp = by_cp.idxmax()
             res["top"] = {"share": float(by_cp.max()) / total,
                           "sector": self.sector.get(top_cp), "region": self.region.get(top_cp) or None}

@@ -54,7 +54,7 @@ tagging:
 profile:
   revenue_threshold: 15000000000   # рубли, допущение
   concentration_threshold: 0.40
-  concentration_min_payments: 5      # концентрация стороны считается при >= N платежей
+  concentration_min_counterparties: 5      # концентрация стороны считается при >= N контрагентов; строк в таблице платежей = число контрагентов, PAY_CNT здесь не используется
   concentration_min_coverage: 0.3    # ... и покрытии стороны >= порога
   channel_weights:
     отраслевой: 1.0

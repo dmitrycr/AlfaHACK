@@ -69,8 +69,8 @@ def test_intragroup_excluded_but_measured(builder):
 
 
 def test_concentration(synth):
-    # в синтетике у клиентов по 3-9 платежей на сторону: для проверки самой доли порог платежей снижаем
-    b = ProfileBuilder(synth, load_config(overrides={"profile": {"concentration_min_payments": 1}}))
+    # в синтетике у клиентов по 3-9 контрагентов на сторону: для проверки самой доли порог контрагентов снижаем
+    b = ProfileBuilder(synth, load_config(overrides={"profile": {"concentration_min_counterparties": 1}}))
     p = b.build_profile("U_4909")
     assert p.concentration["share"] > 0.4 and p.concentration["sector"] == "Машиностроение и промышленность"
 
@@ -117,7 +117,7 @@ def test_client_with_payments_on_one_side_only(builder):
 
 
 @pytest.mark.parametrize("n, known_share, has_top", [(1, 1.0, False), (4, 1.0, False), (5, 0.2, False), (5, 0.5, True)])
-def test_concentration_needs_payments_and_coverage(builder, n, known_share, has_top):
+def test_concentration_needs_counterparties_and_coverage(builder, n, known_share, has_top):
     client = "U_5658"
     known = next(c for c in builder.sector if builder.group.get(c) != builder.group[client])
     amts = [100.0 * known_share] + [100.0 * (1 - known_share) / (n - 1) if n > 1 else 0.0] * (n - 1)
