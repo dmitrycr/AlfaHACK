@@ -58,6 +58,16 @@ curl -X POST localhost:8003/analyze_text -d '{"client_id":"DEMO_1","role":"CFO",
 - **Тегирование без LLM** для пустого, обрезанного и не русского текста (экономия бюджета); при сбое LLM — запасные правила (`tagging/heuristics.py`), результат не кешируется.
 - **Эмбеддинги не используются**: поиск — BM25 (`knowledge/retriever.py`), подмена через интерфейс `Retriever`.
 
+## LLM-клиент (шаг 1 пятничного ТЗ)
+
+`src/ml/llm/`: `base.py` (порт `LLMClient.complete(task, messages, schema=None, run_id=None, *, prompt_version=None)`, кеш, журнал, `Budget`),
+`mock.py` (`MockLLM`, сценарий `[INVALID, None]` = «первый ответ невалидный, второй валидный»), `http.py` (`HttpLLM`), `build_llm(cfg)`.
+Кеш (`sha256(model + messages)`) и журнал вызовов лежат в SQLite по `paths.store`. Невалидный JSON: один повтор с текстом ошибки,
+затем `LLMFormatError`; сбой сети: до `llm.net_retries` (2) повторов. Бюджет шага 1: `normal` → `degraded` (≥ `llm.degrade_at` = 80%:
+только кеш, вызов без кеша даёт `DegradedMode`) → `BudgetExceeded` (≥ 100%). Цены (`llm.prices`) пусты: стоимость 0 и предупреждение
+`TODO(align)`, пока их нет, бюджет не расходуется. Проверка доступа: `LLM_MODE=mock python scripts/check_llm.py`.
+Ключи `cheap_model` и `cache_only_at` в `config.yaml` и описание бюджета выше («Решения») относятся к прежней схеме и клиентом шага 1 не используются.
+
 ## Формат Company Service
 
 Профиль в Company Service (`libs/go/model/model.go`): `company_id, version, ruleset_version, channels[{name, sector, weight, source, evidence[]}], factor_exposure{}, coverage, built_at, synthetic`; реквизиты, ОКВЭД, продукты лежат в отдельном документе Company. Адаптер: `src/ml/company_format.py` (`adapt_profile`, `export_profile`, `export_company`); экспорт: `python scripts/export_profiles.py --out-dir DIR` (profiles.json для `ReplaceProfile`, companies.csv для импорта). `version` в хранилище должен быть last+1. В Company Service не хранятся buyers, suppliers, concentration, commodities, а канала «аффилированный» нет; факторы (`factor_exposure`) пока пусты. Список расхождений: `TODO(align)` в `company_format.py`.
