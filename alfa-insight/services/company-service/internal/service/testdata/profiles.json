@@ -1,0 +1,24 @@
+[
+  {
+    "company_id": "company-food",
+    "version": 1,
+    "ruleset_version": "synthetic-v1",
+    "channels": [
+      {
+        "name": "industry",
+        "sector": "Пищевое производство",
+        "weight": 1,
+        "source": "data",
+        "evidence": [
+          "synthetic:okved:10.61"
+        ]
+      }
+    ],
+    "factor_exposure": {
+      "interest_rate": null
+    },
+    "coverage": null,
+    "built_at": "2026-10-21T00:00:00Z",
+    "synthetic": true
+  }
+]

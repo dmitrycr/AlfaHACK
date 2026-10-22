@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+!.env.example
+frontend
+ml
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.log
+bin
+backups

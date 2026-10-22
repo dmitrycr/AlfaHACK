@@ -1,0 +1,98 @@
+THIRD PARTY NOTICES
+===================
+
+Alfa Insight backend iteration 0.1.0. All news fixtures, company examples and demo
+credentials are synthetic. No real news feeds, bank documents, case datasets or
+LLM models are bundled or called by this iteration.
+
+Go module inventory
+-------------------
+Inventory includes the selected module graph, including test/tool dependencies.
+Full top-level license/notice files are copied to docs/licenses/go/. Bundled
+libraries may contain additional per-file notices; their upstream repositories
+remain the source for those notices.
+
+Module | Version | License | Included texts
+cel.dev/expr | v0.24.0 | Apache-2.0 | docs/licenses/go/cel.dev_expr_LICENSE
+cloud.google.com/go/compute/metadata | v0.7.0 | Apache-2.0 | docs/licenses/go/cloud.google.com_go_compute_metadata_LICENSE
+github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp | v1.29.0 | Apache-2.0 | docs/licenses/go/github.com_GoogleCloudPlatform_opentelemetry-operations-go_detectors_gcp_LICENSE
+github.com/andybalholm/cascadia | v1.3.3 | BSD-2-Clause | docs/licenses/go/github.com_andybalholm_cascadia_LICENSE
+github.com/cespare/xxhash/v2 | v2.3.0 | MIT | docs/licenses/go/github.com_cespare_xxhash_v2_LICENSE.txt
+github.com/cncf/xds/go | v0.0.0-20250501225837-2ac532fd4443 | Apache-2.0 | docs/licenses/go/github.com_cncf_xds_go_LICENSE
+github.com/davecgh/go-spew | v1.1.1 | See included license text | docs/licenses/go/github.com_davecgh_go-spew_LICENSE
+github.com/envoyproxy/go-control-plane | v0.13.4 | Apache-2.0 | docs/licenses/go/github.com_envoyproxy_go-control-plane_LICENSE
+github.com/envoyproxy/go-control-plane/envoy | v1.32.4 | Apache-2.0 | docs/licenses/go/github.com_envoyproxy_go-control-plane_envoy_LICENSE
+github.com/envoyproxy/go-control-plane/ratelimit | v0.1.0 | Apache-2.0 | docs/licenses/go/github.com_envoyproxy_go-control-plane_ratelimit_LICENSE
+github.com/envoyproxy/protoc-gen-validate | v1.2.1 | Apache-2.0 | docs/licenses/go/github.com_envoyproxy_protoc-gen-validate_LICENSE
+github.com/go-jose/go-jose/v4 | v4.1.1 | Apache-2.0 | docs/licenses/go/github.com_go-jose_go-jose_v4_LICENSE
+github.com/go-logr/logr | v1.4.3 | Apache-2.0 | docs/licenses/go/github.com_go-logr_logr_LICENSE
+github.com/go-logr/stdr | v1.2.2 | Apache-2.0 | docs/licenses/go/github.com_go-logr_stdr_LICENSE
+github.com/golang/glog | v1.2.5 | Apache-2.0 | docs/licenses/go/github.com_golang_glog_LICENSE
+github.com/golang/protobuf | v1.5.4 | BSD-3-Clause | docs/licenses/go/github.com_golang_protobuf_LICENSE
+github.com/google/go-cmp | v0.7.0 | BSD-3-Clause | docs/licenses/go/github.com_google_go-cmp_LICENSE
+github.com/google/uuid | v1.6.0 | BSD-3-Clause | docs/licenses/go/github.com_google_uuid_LICENSE
+github.com/jackc/pgpassfile | v1.0.0 | MIT | docs/licenses/go/github.com_jackc_pgpassfile_LICENSE
+github.com/jackc/pgservicefile | v0.0.0-20240606120523-5a60cdf6a761 | MIT | docs/licenses/go/github.com_jackc_pgservicefile_LICENSE
+github.com/jackc/pgx/v5 | v5.7.6 | MIT | docs/licenses/go/github.com_jackc_pgx_v5_LICENSE
+github.com/jackc/puddle/v2 | v2.2.2 | MIT | docs/licenses/go/github.com_jackc_puddle_v2_LICENSE
+github.com/klauspost/compress | v1.18.5 | Apache-2.0 | docs/licenses/go/github.com_klauspost_compress_LICENSE
+github.com/kr/pretty | v0.3.0 | MIT | docs/licenses/go/github.com_kr_pretty_License
+github.com/pierrec/lz4/v4 | v4.1.26 | BSD-3-Clause | docs/licenses/go/github.com_pierrec_lz4_v4_LICENSE
+github.com/planetscale/vtprotobuf | v0.6.1-0.20240319094008-0393e58bdf10 | BSD-3-Clause | docs/licenses/go/github.com_planetscale_vtprotobuf_LICENSE
+github.com/pmezard/go-difflib | v1.0.0 | BSD-2-Clause | docs/licenses/go/github.com_pmezard_go-difflib_LICENSE
+github.com/spiffe/go-spiffe/v2 | v2.5.0 | Apache-2.0 | docs/licenses/go/github.com_spiffe_go-spiffe_v2_LICENSE
+github.com/stretchr/objx | v0.1.0 | MIT | docs/licenses/go/github.com_stretchr_objx_LICENSE
+github.com/stretchr/testify | v1.8.1 | MIT | docs/licenses/go/github.com_stretchr_testify_LICENSE
+github.com/twmb/franz-go | v1.21.0 | BSD-3-Clause | docs/licenses/go/github.com_twmb_franz-go_LICENSE
+github.com/twmb/franz-go/pkg/kadm | v1.17.1 | BSD-3-Clause | docs/licenses/go/github.com_twmb_franz-go_pkg_kadm_LICENSE
+github.com/twmb/franz-go/pkg/kfake | v0.0.0-20260421212619-897f85bae559 | BSD-3-Clause | docs/licenses/go/github.com_twmb_franz-go_pkg_kfake_LICENSE
+github.com/twmb/franz-go/pkg/kmsg | v1.13.1 | BSD-3-Clause | docs/licenses/go/github.com_twmb_franz-go_pkg_kmsg_LICENSE
+github.com/yuin/goldmark | v1.4.13 | MIT | docs/licenses/go/github.com_yuin_goldmark_LICENSE
+github.com/zeebo/errs | v1.4.0 | MIT | docs/licenses/go/github.com_zeebo_errs_LICENSE
+go.opentelemetry.io/auto/sdk | v1.1.0 | Apache-2.0 | docs/licenses/go/go.opentelemetry.io_auto_sdk_LICENSE
+go.opentelemetry.io/contrib/detectors/gcp | v1.36.0 | Apache-2.0 | docs/licenses/go/go.opentelemetry.io_contrib_detectors_gcp_LICENSE
+go.opentelemetry.io/otel | v1.37.0 | Apache-2.0 | docs/licenses/go/go.opentelemetry.io_otel_LICENSE
+go.opentelemetry.io/otel/metric | v1.37.0 | Apache-2.0 | docs/licenses/go/go.opentelemetry.io_otel_metric_LICENSE
+go.opentelemetry.io/otel/sdk | v1.37.0 | Apache-2.0 | docs/licenses/go/go.opentelemetry.io_otel_sdk_LICENSE
+go.opentelemetry.io/otel/sdk/metric | v1.37.0 | Apache-2.0 | docs/licenses/go/go.opentelemetry.io_otel_sdk_metric_LICENSE
+go.opentelemetry.io/otel/trace | v1.37.0 | Apache-2.0 | docs/licenses/go/go.opentelemetry.io_otel_trace_LICENSE
+golang.org/x/crypto | v0.50.0 | BSD-3-Clause | docs/licenses/go/golang.org_x_crypto_LICENSE
+golang.org/x/mod | v0.34.0 | BSD-3-Clause | docs/licenses/go/golang.org_x_mod_LICENSE
+golang.org/x/net | v0.52.0 | BSD-3-Clause | docs/licenses/go/golang.org_x_net_LICENSE
+golang.org/x/oauth2 | v0.30.0 | BSD-3-Clause | docs/licenses/go/golang.org_x_oauth2_LICENSE
+golang.org/x/sync | v0.20.0 | BSD-3-Clause | docs/licenses/go/golang.org_x_sync_LICENSE
+golang.org/x/sys | v0.43.0 | BSD-3-Clause | docs/licenses/go/golang.org_x_sys_LICENSE
+golang.org/x/telemetry | v0.0.0-20240228155512-f48c80bd79b2 | BSD-3-Clause | docs/licenses/go/golang.org_x_telemetry_LICENSE
+golang.org/x/term | v0.42.0 | BSD-3-Clause | docs/licenses/go/golang.org_x_term_LICENSE
+golang.org/x/text | v0.36.0 | BSD-3-Clause | docs/licenses/go/golang.org_x_text_LICENSE
+golang.org/x/tools | v0.43.0 | BSD-3-Clause | docs/licenses/go/golang.org_x_tools_LICENSE
+golang.org/x/xerrors | v0.0.0-20191204190536-9bdfabe68543 | BSD-3-Clause | docs/licenses/go/golang.org_x_xerrors_LICENSE
+gonum.org/v1/gonum | v0.16.0 | BSD-3-Clause | docs/licenses/go/gonum.org_v1_gonum_LICENSE
+google.golang.org/genproto/googleapis/api | v0.0.0-20250707201910-8d1bb00bc6a7 | Apache-2.0 | docs/licenses/go/google.golang.org_genproto_googleapis_api_LICENSE
+google.golang.org/genproto/googleapis/rpc | v0.0.0-20250707201910-8d1bb00bc6a7 | Apache-2.0 | docs/licenses/go/google.golang.org_genproto_googleapis_rpc_LICENSE
+google.golang.org/grpc | v1.75.0 | Apache-2.0 | docs/licenses/go/google.golang.org_grpc_LICENSE, docs/licenses/go/google.golang.org_grpc_NOTICE.txt
+google.golang.org/protobuf | v1.36.8 | BSD-3-Clause | docs/licenses/go/google.golang.org_protobuf_LICENSE
+gopkg.in/check.v1 | v1.0.0-20201130134442-10cb98267c6c | BSD-2-Clause | docs/licenses/go/gopkg.in_check.v1_LICENSE
+gopkg.in/yaml.v3 | v3.0.1 | Apache-2.0 | docs/licenses/go/gopkg.in_yaml.v3_LICENSE, docs/licenses/go/gopkg.in_yaml.v3_NOTICE
+
+Toolchain and generated code
+----------------------------
+Go 1.25.1 standard library: BSD-3-Clause; see docs/licenses/go/go-standard-library-LICENSE.
+Protobuf-generated Go code is generated from this repository's own protocol definitions.
+Protobuf and gRPC runtimes are listed above.
+
+Python validation tooling
+-------------------------
+Pinned versions are in scripts/requirements-contracts.txt.
+jsonschema 4.25.1, attrs 26.1.0, jsonschema-specifications 2025.9.1,
+referencing 0.37.0, rpds-py 2026.9.1, typing_extensions 4.16.0.
+Their installed license/notice texts are copied to docs/licenses/python/.
+
+Container images and CI
+-----------------------
+golang:1.25.1-alpine (build only), alpine:3.22, postgres:17.6-alpine,
+apache/kafka:4.0.0. These images retain their own package licenses and notices.
+The local Kafka protocol mock is franz-go/pkg/kfake, listed above; it is not Apache Kafka.
+GitHub Actions: actions/checkout@v4, actions/setup-go@v5 and actions/setup-python@v5.
+
+No production bank authentication, real-bank integration or live ML is represented.

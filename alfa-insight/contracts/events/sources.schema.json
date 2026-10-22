@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "rss",
+              "atom",
+              "html",
+              "json"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "poll_seconds": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "date_layouts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "full_text": {
+            "type": "boolean"
+          },
+          "allowed_hosts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "selectors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "json_fields": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "max_pages": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "max_items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "version": {
+            "type": "string"
+          },
+          "charset": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "url",
+          "enabled",
+          "priority",
+          "poll_seconds",
+          "timezone",
+          "date_layouts",
+          "full_text",
+          "allowed_hosts",
+          "selectors",
+          "json_fields",
+          "max_pages",
+          "max_items",
+          "version"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "headers"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "version",
+    "sources",
+    "resources"
+  ],
+  "additionalProperties": false
+}
