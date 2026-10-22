@@ -110,6 +110,7 @@ def test_cache_recalculates_only_on_change(synth, tmp_path):
 
 
 def test_profiles_usable_by_provider(synth, tmp_path):
+    pytest.importorskip("ml.knowledge")      # ports.py тянет модули других этапов
     from ml.ports import FileProfileProvider
     out = tmp_path / "p.json"
     build_and_cache(synth, out, load_config())

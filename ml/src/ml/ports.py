@@ -13,6 +13,7 @@ from pathlib import Path
 import httpx
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+from .company_format import adapt_profile, export_company, export_profile, validate_company_profile  # noqa: F401
 from .config import resolve_path
 from .knowledge.retriever import BM25Retriever, Retriever
 from .knowledge.tokenizer import tokenize
@@ -33,9 +34,7 @@ class ProfileProvider(ABC):
     def list_clients(self) -> list[str]: ...
 
 
-def adapt_profile(payload: dict) -> ProfileIn:
-    """TODO(align): если поля Company Service называются иначе, привести их к ProfileIn здесь."""
-    return ProfileIn.model_validate(payload)
+# Адаптер формата Company Service живёт в company_format.py (без зависимостей от других этапов).
 
 
 class FileProfileProvider(ProfileProvider):
@@ -60,7 +59,8 @@ class HttpProfileProvider(ProfileProvider):
         self.base, self.timeout = base_url.rstrip("/"), timeout
 
     def get_profile(self, client_id: str) -> ProfileIn:
-        # TODO(align): путь и формат ответа Company Service
+        # TODO(align): путь; Company Service отдаёт Profile и Company раздельно (gateway /companies/current/profile
+        # требует сессию), для формата CS нужен второй запрос за документом компании -> adapt_profile(p, company)
         r = httpx.get(f"{self.base}/profile/{client_id}", timeout=self.timeout)
         if r.status_code == 404:
             raise NotFound(client_id)

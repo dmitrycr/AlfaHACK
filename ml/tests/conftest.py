@@ -11,8 +11,11 @@ for var in ("PROFILE_SERVICE_URL", "EVENT_SERVICE_URL", "NEWS_SERVICE_URL", "KNO
 
 from ml.config import load_config  # noqa: E402
 from ml.schemas import ProfileIn  # noqa: E402
-from ml.services.common import build_context  # noqa: E402
-from ml.store import Store  # noqa: E402
+try:  # модули других этапов (services, store) отсутствуют в ветке Этапа 1
+    from ml.services.common import build_context  # noqa: E402
+    from ml.store import Store  # noqa: E402
+except ImportError:
+    build_context = Store = None
 
 FX = Path(__file__).parent / "fixtures"
 

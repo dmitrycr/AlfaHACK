@@ -56,6 +56,10 @@ curl -X POST localhost:8003/analyze_text -d '{"client_id":"DEMO_1","role":"CFO",
 - **Тегирование без LLM** для пустого, обрезанного и не русского текста (экономия бюджета); при сбое LLM — запасные правила (`tagging/heuristics.py`), результат не кешируется.
 - **Эмбеддинги не используются**: поиск — BM25 (`knowledge/retriever.py`), подмена через интерфейс `Retriever`.
 
+## Формат Company Service
+
+Профиль в Company Service (`libs/go/model/model.go`): `company_id, version, ruleset_version, channels[{name, sector, weight, source, evidence[]}], factor_exposure{}, coverage, built_at, synthetic`; реквизиты, ОКВЭД, продукты лежат в отдельном документе Company. Адаптер: `src/ml/company_format.py` (`adapt_profile`, `export_profile`, `export_company`); экспорт: `python scripts/export_profiles.py --out-dir DIR` (profiles.json для `ReplaceProfile`, companies.csv для импорта). `version` в хранилище должен быть last+1. В Company Service не хранятся buyers, suppliers, concentration, commodities, а канала «аффилированный» нет; факторы (`factor_exposure`) пока пусты. Список расхождений: `TODO(align)` в `company_format.py`.
+
 ## Что в репозитории НЕ настоящее (важно)
 
 - `tests/fixtures/bank_analytics/*.txt` — **иллюстративные тексты** под названия документов из приложения 2, не аналитика банка. Реальные PDF положить в `$DATA_DIR/bank_analytics/` и запустить `ingest_bank_docs.py`.
