@@ -125,6 +125,7 @@ class ProfileIn(BaseModel):
     concentration: Optional[dict] = None   # {"share","sector","region"}
     commodities: list[str] = []
     coverage: dict = {}                    # {"buyers": 0.0-1.0, "suppliers": 0.0-1.0}
+    features: Optional[dict] = None        # {"buyers": {...}|None, "suppliers": {...}|None}, см. profile/features.py
     version: int = 1
 
 

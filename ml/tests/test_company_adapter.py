@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from ml.company_format import (CHANNEL_TO_CS, SOURCE_TO_CS, adapt_profile, export_company, export_extra, export_profile,
+from ml.company_format import (CHANNEL_TO_CS, SOURCE_TO_CS, adapt_profile, export_company, export_profile,
                       validate_company_profile)
 from ml.schemas import Channel, ProfileIn
 
@@ -97,28 +97,45 @@ def test_export_all_seven_products(demo):
         assert set(export_company(p)["products"]) == seven
 
 
-def test_extra_separate_from_payload(demo):
-    p = demo[0].model_copy(update={"buyers": {"Строительство": 0.4}, "suppliers": {"Металлургия": 0.3},
-                                   "concentration": {"share": 0.5, "sector": "Строительство", "region": None},
-                                   "commodities": ["сталь"], "coverage": {"buyers": 0.8, "suppliers": 0.6}})
-    extra = export_extra(p)
-    assert extra["coverage"] == {"buyers": 0.8, "suppliers": 0.6} and extra["buyers"] == {"Строительство": 0.4}
-    assert extra["commodities"] == ["сталь"] and extra["concentration"]["share"] == 0.5
-    doc = export_profile(p)
+def test_features_in_profile_top_level(demo):
+    feats = {"buyers": {"sector_shares": [{"sector": "Строительство", "share": 0.34}],
+                        "concentration": {"top1_share": 0.15, "top5_share": 0.6, "hhi": 0.08}}, "suppliers": None}
+    p = demo[0].model_copy(update={"features": feats, "commodities": ["сталь"], "coverage": {"buyers": 0.8, "suppliers": 0.6}})
+    assert "features" not in export_profile(p)                      # по умолчанию (флаг выключен) ключа нет
+    doc = export_profile(p, include_features=True)
+    assert doc["features"] == feats and doc["coverage"] == 0.6 and validate_company_profile(doc) == []
     assert not {"buyers", "suppliers", "concentration", "commodities"} & set(doc)
-    assert doc["coverage"] == 0.6 and validate_company_profile(doc) == []
+    assert "features" not in export_profile(demo[0].model_copy(update={"features": None}), include_features=True)
 
 
-def test_export_script_writes_extra_and_csv(demo, tmp_path):
+def test_export_script_no_extra_file_and_csv(demo, tmp_path):
     import subprocess
     import sys
     import pandas as pd
     root = Path(__file__).parents[1]
     subprocess.run([sys.executable, str(root / "scripts" / "export_profiles.py"), "--src", str(FX),
                     "--out-dir", str(tmp_path)], check=True, cwd=root)
-    extra = json.loads((tmp_path / "profiles_extra.json").read_text(encoding="utf-8"))
     prof = json.loads((tmp_path / "profiles.json").read_text(encoding="utf-8"))
-    assert set(extra) == {d["company_id"] for d in prof} == {p.client_id for p in demo}
-    assert all(set(v) == {"buyers", "suppliers", "concentration", "commodities", "coverage"} for v in extra.values())
+    assert not (tmp_path / "profiles_extra.json").exists()
+    assert {d["company_id"] for d in prof} == {p.client_id for p in demo}
     assert all("аффилированный" not in json.dumps(d, ensure_ascii=False) for d in prof)
     assert len(pd.read_csv(tmp_path / "companies.csv").columns) == 13
+
+
+def test_export_script_features_flag(tmp_path):
+    from ml.config import get_config
+    assert get_config()["export"]["include_features"] is False
+    src = json.loads(FX.read_text(encoding="utf-8"))
+    for v in src["profiles"].values():
+        v["features"] = {"buyers": None, "suppliers": None}
+    fx = tmp_path / "src.json"
+    fx.write_text(json.dumps(src, ensure_ascii=False), encoding="utf-8")
+    import subprocess
+    import sys
+    root = Path(__file__).parents[1]
+    for flags, want in (([], False), (["--include-features"], True)):
+        out = tmp_path / str(want)
+        subprocess.run([sys.executable, str(root / "scripts" / "export_profiles.py"), "--src", str(fx), "--out-dir", str(out),
+                        *flags], check=True, cwd=root)
+        docs = json.loads((out / "profiles.json").read_text(encoding="utf-8"))
+        assert all(("features" in d) is want for d in docs) and len(docs) == 5

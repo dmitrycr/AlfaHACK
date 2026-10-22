@@ -11,6 +11,7 @@ import pandas as pd
 
 from ..refdata import RefData, load_refdata, normalize_okved
 from ..schemas import Channel, ProfileIn
+from .features import side_features
 
 GARBAGE_IDS = {"U_428697"}
 PRODUCT_COLS = {"loan": "CL_PRODUCT_LOA_MARK", "leasing": "CL_PRODUCT_LEA_MARK", "guarantee": "CL_PRODUCT_GAR_MARK",
@@ -128,7 +129,7 @@ class ProfileBuilder:
         intragroup = float(rows.loc[intra_mask, "PAY_AMT"].sum())
         rows = rows[~intra_mask]
         total = float(rows["PAY_AMT"].sum())
-        res = {"shares": {}, "coverage": 0.0, "unknown_share": 0.0, "top": None,
+        res = {"shares": {}, "features": None, "coverage": 0.0, "unknown_share": 0.0, "top": None,
                "intragroup_share": (intragroup / total_all) if total_all > 0 else 0.0}
         if total <= 0:
             return res
@@ -144,6 +145,8 @@ class ProfileBuilder:
         res["unknown_share"] = unknown / total
         res["coverage"] = 1.0 - unknown / total
         pc = self.cfg["profile"]
+        res["features"] = side_features(by_cp, self.sector, min_coverage=float(pc["concentration_min_coverage"]),
+                                        min_counterparties=int(pc["concentration_min_counterparties"]))
         if len(rows) >= int(pc["concentration_min_counterparties"]) and res["coverage"] >= float(pc["concentration_min_coverage"]):
             top_cp = by_cp.idxmax()
             res["top"] = {"share": float(by_cp.max()) / total,
@@ -183,7 +186,8 @@ class ProfileBuilder:
             buyers=buyers, suppliers=suppliers,
             concentration=({"share": round(conc["share"], 4), "sector": conc["sector"], "region": conc["region"]}
                            if conc else None),
-            commodities=commodities, coverage=coverage)
+            commodities=commodities, coverage=coverage,
+            features={"buyers": buy["features"], "suppliers": sup["features"]})
 
     def clients_above_threshold(self) -> tuple[list[str], list[str]]:
         thr = float(self.cfg["profile"]["revenue_threshold"])

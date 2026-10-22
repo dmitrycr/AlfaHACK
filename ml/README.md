@@ -60,6 +60,11 @@ curl -X POST localhost:8003/analyze_text -d '{"client_id":"DEMO_1","role":"CFO",
 
 Профиль в Company Service (`libs/go/model/model.go`): `company_id, version, ruleset_version, channels[{name, sector, weight, source, evidence[]}], factor_exposure{}, coverage, built_at, synthetic`; реквизиты, ОКВЭД, продукты лежат в отдельном документе Company. Адаптер: `src/ml/company_format.py` (`adapt_profile`, `export_profile`, `export_company`); экспорт: `python scripts/export_profiles.py --out-dir DIR` (profiles.json для `ReplaceProfile`, companies.csv для импорта). `version` в хранилище должен быть last+1. В Company Service не хранятся buyers, suppliers, concentration, commodities, а канала «аффилированный» нет; факторы (`factor_exposure`) пока пусты. Список расхождений: `TODO(align)` в `company_format.py`.
 
+## Поле features профиля
+`features` = `{"buyers": {...}|null, "suppliers": {...}|null}`: у стороны `sector_shares` [{sector, share}] и `concentration` {top1_share, top5_share, hhi}. Расчёт: `src/ml/profile/features.py`; сырьё и coverage в features не входят. Округление (решение согласовано с бэкендом): `sector_shares.share` - 3 знака, `top1_share`/`top5_share`/`hhi` - 4 знака.
+
+Флаг `export.include_features` (config.yaml) по умолчанию `false`: тогда `features` не попадает ни в `profiles.json`, ни в payload `ReplaceProfile` (профиль без ключа). Причина: бэкенд пока не знает поле (`model.Profile`, OpenAPI, `ReadImport`): gRPC молча его отбросит, импорт отвергнет. Расчёт features остаётся, просто не выгружается. Включить: `true` в конфиге или `--include-features` у `export_profiles.py`.
+
 ## Пороги профиля
 
 Значения из `config/config.yaml`:

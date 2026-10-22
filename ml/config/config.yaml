@@ -51,6 +51,8 @@ knowledge:
 tagging:
   lead_chars: 700
   min_text_chars: 20
+export:
+  include_features: false    # TODO(align): false, пока в Company Service нет поля features (model.Profile, OpenAPI, ReadImport)
 profile:
   revenue_threshold: 15000000000   # рубли, допущение
   concentration_threshold: 0.40
