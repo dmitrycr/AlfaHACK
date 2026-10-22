@@ -1,5 +1,5 @@
 {
-  "company_id": "U_107248",
+  "company_id": "C_EXAMPLE",
   "version": 1,
   "ruleset_version": "ml-stage1-v1",
   "channels": [
@@ -61,91 +61,91 @@
     },
     {
       "name": "demand",
-      "weight": 1.0,
+      "weight": 0.8,
       "source": "data",
       "evidence": [
-        "93% оборота — контрагенты сектора Недвижимость"
+        "60% оборота — контрагенты сектора Недвижимость"
       ],
       "sector": "Недвижимость"
     },
     {
       "name": "demand",
-      "weight": 0.1165,
+      "weight": 0.5,
       "source": "data",
       "evidence": [
-        "5% оборота — контрагенты сектора Услуги и прочее"
+        "25% оборота — контрагенты сектора Услуги и прочее"
       ],
       "sector": "Услуги и прочее"
     },
     {
       "name": "demand",
-      "weight": 0.0032,
+      "weight": 0.3,
       "source": "data",
       "evidence": [
-        "0% оборота — контрагенты сектора Оптовая торговля"
+        "15% оборота — контрагенты сектора Оптовая торговля"
       ],
       "sector": "Оптовая торговля"
     },
     {
       "name": "supply",
-      "weight": 0.7762,
+      "weight": 0.7,
       "source": "data",
       "evidence": [
-        "31% оборота — контрагенты сектора Услуги и прочее"
+        "55% оборота — контрагенты сектора Услуги и прочее"
       ],
       "sector": "Услуги и прочее"
     },
     {
       "name": "supply",
-      "weight": 0.6685,
+      "weight": 0.5,
       "source": "data",
       "evidence": [
-        "27% оборота — контрагенты сектора Строительство"
+        "45% оборота — контрагенты сектора Строительство"
       ],
       "sector": "Строительство"
     }
   ],
   "factor_exposure": {},
-  "coverage": 0.5779,
-  "built_at": "2026-10-22T23:36:38Z",
+  "coverage": 0.6,
+  "built_at": "2026-01-01T00:00:00Z",
   "synthetic": false,
   "features": {
     "buyers": {
       "sector_shares": [
         {
           "sector": "Недвижимость",
-          "share": 0.951
+          "share": 0.6
         },
         {
           "sector": "Услуги и прочее",
-          "share": 0.047
+          "share": 0.25
         },
         {
           "sector": "Оптовая торговля",
-          "share": 0.001
+          "share": 0.15
         }
       ],
       "concentration": {
-        "top1_share": 0.9329,
-        "top5_share": 1.0,
-        "hhi": 0.8728
+        "top1_share": 0.18,
+        "top5_share": 0.55,
+        "hhi": 0.09
       }
     },
     "suppliers": {
       "sector_shares": [
         {
           "sector": "Услуги и прочее",
-          "share": 0.537
+          "share": 0.55
         },
         {
           "sector": "Строительство",
-          "share": 0.463
+          "share": 0.45
         }
       ],
       "concentration": {
-        "top1_share": 0.2952,
-        "top5_share": 0.9667,
-        "hhi": 0.2166
+        "top1_share": 0.22,
+        "top5_share": 0.6,
+        "hhi": 0.11
       }
     }
   }

@@ -1,6 +1,8 @@
 # Поле `features` профиля
 
-Источник: `src/ml/profile/features.py` (`side_features`), вызов в `src/ml/profile/builder.py` (`_side`), выгрузка в `src/ml/company_format.py` (`export_profile`). Пример: `profile_features_example.json` (клиент `U_107248`, `buyers` и `suppliers` не null, `concentration` у обеих сторон; собран из `data/real` с `--include-features`).
+Пример обезличен: идентификатор, веса, доли и показатели концентрации условные, реальных данных в нём нет; структура и ключи настоящие.
+
+Источник: `src/ml/profile/features.py` (`side_features`), вызов в `src/ml/profile/builder.py` (`_side`), выгрузка в `src/ml/company_format.py` (`export_profile`). Пример: `profile_features_example.json` (`buyers` и `suppliers` не null, `concentration` у обеих сторон).
 
 `features` попадает в профиль только при `export.include_features: true` (по умолчанию `false`). Если у профиля `features` нет совсем (старые файлы), ключ не пишется.
 
