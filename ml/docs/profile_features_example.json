@@ -1,0 +1,152 @@
+{
+  "company_id": "U_107248",
+  "version": 1,
+  "ruleset_version": "ml-stage1-v1",
+  "channels": [
+    {
+      "name": "industry",
+      "weight": 1.0,
+      "source": "data",
+      "evidence": [
+        "ОКВЭД 41.2 -> Строительство"
+      ]
+    },
+    {
+      "name": "competitor",
+      "weight": 0.7,
+      "source": "data",
+      "evidence": [
+        "сектор Строительство"
+      ]
+    },
+    {
+      "name": "financial",
+      "weight": 0.9,
+      "source": "data",
+      "evidence": [
+        "есть лизинг"
+      ]
+    },
+    {
+      "name": "currency",
+      "weight": 0.2,
+      "source": "data",
+      "evidence": [
+        "FTS_FLAG = 0"
+      ]
+    },
+    {
+      "name": "commodity",
+      "weight": 0.7,
+      "source": "data",
+      "evidence": [
+        "сырьё сектора: сталь"
+      ]
+    },
+    {
+      "name": "regional",
+      "weight": 0.5,
+      "source": "data",
+      "evidence": [
+        "регион Москва"
+      ]
+    },
+    {
+      "name": "regulatory",
+      "weight": 0.6,
+      "source": "data",
+      "evidence": [
+        "отрасль Строительство"
+      ]
+    },
+    {
+      "name": "demand",
+      "weight": 1.0,
+      "source": "data",
+      "evidence": [
+        "93% оборота — контрагенты сектора Недвижимость"
+      ],
+      "sector": "Недвижимость"
+    },
+    {
+      "name": "demand",
+      "weight": 0.1165,
+      "source": "data",
+      "evidence": [
+        "5% оборота — контрагенты сектора Услуги и прочее"
+      ],
+      "sector": "Услуги и прочее"
+    },
+    {
+      "name": "demand",
+      "weight": 0.0032,
+      "source": "data",
+      "evidence": [
+        "0% оборота — контрагенты сектора Оптовая торговля"
+      ],
+      "sector": "Оптовая торговля"
+    },
+    {
+      "name": "supply",
+      "weight": 0.7762,
+      "source": "data",
+      "evidence": [
+        "31% оборота — контрагенты сектора Услуги и прочее"
+      ],
+      "sector": "Услуги и прочее"
+    },
+    {
+      "name": "supply",
+      "weight": 0.6685,
+      "source": "data",
+      "evidence": [
+        "27% оборота — контрагенты сектора Строительство"
+      ],
+      "sector": "Строительство"
+    }
+  ],
+  "factor_exposure": {},
+  "coverage": 0.5779,
+  "built_at": "2026-10-22T23:36:38Z",
+  "synthetic": false,
+  "features": {
+    "buyers": {
+      "sector_shares": [
+        {
+          "sector": "Недвижимость",
+          "share": 0.951
+        },
+        {
+          "sector": "Услуги и прочее",
+          "share": 0.047
+        },
+        {
+          "sector": "Оптовая торговля",
+          "share": 0.001
+        }
+      ],
+      "concentration": {
+        "top1_share": 0.9329,
+        "top5_share": 1.0,
+        "hhi": 0.8728
+      }
+    },
+    "suppliers": {
+      "sector_shares": [
+        {
+          "sector": "Услуги и прочее",
+          "share": 0.537
+        },
+        {
+          "sector": "Строительство",
+          "share": 0.463
+        }
+      ],
+      "concentration": {
+        "top1_share": 0.2952,
+        "top5_share": 0.9667,
+        "hhi": 0.2166
+      }
+    }
+  }
+}
