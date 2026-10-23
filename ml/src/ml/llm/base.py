@@ -12,7 +12,7 @@ import time
 from abc import ABC, abstractmethod
 from contextlib import closing
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -29,14 +29,53 @@ CREATE TABLE IF NOT EXISTS llm_cache (key TEXT PRIMARY KEY, response TEXT NOT NU
 CREATE TABLE IF NOT EXISTS llm_calls (
     id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, day TEXT NOT NULL, run_id TEXT, task TEXT, model TEXT,
     prompt_version TEXT, tokens_in INTEGER, tokens_out INTEGER, duration_ms INTEGER, status TEXT, cost_rub REAL,
-    cached INTEGER, error TEXT);
+    cached INTEGER, error TEXT, endpoint TEXT);
 CREATE INDEX IF NOT EXISTS ix_llm_calls_day ON llm_calls(day);
 CREATE TABLE IF NOT EXISTS kv (ns TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (ns, key));
 """
 
 
+_SECRET = re.compile(r"sk-[A-Za-z0-9_\-]+")
+
+MSK = timezone(timedelta(hours=3), "MSK")
+RESET_HOUR = 3                                  # дневной бюджет команды сбрасывается в 03:00 МСК
+
+
+def mask_secrets(text: str) -> str:
+    """Ключи вида sk-... -> sk-***: в журналах, логах и ошибках ключа быть не должно."""
+    return _SECRET.sub("sk-***", text)
+
+
+class _MaskFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.msg, record.args = mask_secrets(record.getMessage()), ()
+        return True
+
+
+log.addFilter(_MaskFilter())
+
+
+def now_msk() -> datetime:
+    return datetime.now(MSK)
+
+
+def budget_day(now: datetime | None = None) -> date:
+    """Дата бюджетного окна: окно идёт с 03:00 МСК до 03:00 МСК следующих суток."""
+    return ((now or now_msk()).astimezone(MSK) - timedelta(hours=RESET_HOUR)).date()
+
+
+def next_reset(now: datetime | None = None) -> datetime:
+    """Ближайший сброс бюджета (03:00 МСК) строго после now."""
+    now = (now or now_msk()).astimezone(MSK)
+    t = now.replace(hour=RESET_HOUR, minute=0, second=0, microsecond=0)
+    return t if t > now else t + timedelta(days=1)
+
+
 class LLMError(Exception):
-    """Любая ошибка LLM-клиента."""
+    """Любая ошибка LLM-клиента. Текст очищается от ключей sk-..."""
+
+    def __init__(self, *args):
+        super().__init__(*(mask_secrets(a) if isinstance(a, str) else a for a in args))
 
 
 class LLMNetworkError(LLMError):
@@ -48,7 +87,7 @@ class LLMFormatError(LLMError):
 
 
 class BudgetExceeded(LLMError):
-    """Дневной лимит исчерпан (>= 100%): вызов без кеша не уходит в сеть."""
+    """Дневной лимит исчерпан (>= 100%) или шлюз ответил "Budget has been exceeded": вызов без кеша не уходит в сеть."""
 
 
 class DegradedMode(BudgetExceeded):
@@ -60,6 +99,7 @@ class RawResponse:
     text: str
     tokens_in: int = 0
     tokens_out: int = 0
+    endpoint: str = ""                   # какой адрес ответил: primary | reserve ("" у мока)
 
 
 def cache_key(model: str, messages: list[dict]) -> str:
@@ -89,6 +129,9 @@ class Store:
         self._lock = threading.Lock()
         with self._lock, closing(sqlite3.connect(self.path, timeout=30)) as c:
             c.executescript(_SQL)
+            if "endpoint" not in {r[1] for r in c.execute("PRAGMA table_info(llm_calls)")}:    # кеш прежних версий
+                c.execute("ALTER TABLE llm_calls ADD COLUMN endpoint TEXT")
+                c.commit()
 
     def _exec(self, sql: str, params: tuple = ()) -> list[tuple]:
         with self._lock, closing(sqlite3.connect(self.path, timeout=30)) as c:
@@ -106,12 +149,14 @@ class Store:
 
     def log_call(self, *, run_id: str | None, task: str | None, model: str | None, prompt_version: str | None,
                  tokens_in: int = 0, tokens_out: int = 0, duration_ms: int = 0, status: str = "ok",
-                 cost_rub: float = 0.0, cached: bool = False, error: str | None = None) -> None:
-        now = datetime.now()
+                 cost_rub: float = 0.0, cached: bool = False, error: str | None = None,
+                 endpoint: str | None = None) -> None:
+        now = now_msk()
         self._exec("INSERT INTO llm_calls(ts, day, run_id, task, model, prompt_version, tokens_in, tokens_out, duration_ms,"
-                   " status, cost_rub, cached, error) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                   (now.isoformat(timespec="seconds"), now.date().isoformat(), run_id, task, model, prompt_version,
-                    tokens_in, tokens_out, duration_ms, status, cost_rub, int(cached), error))
+                   " status, cost_rub, cached, error, endpoint) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                   (now.isoformat(timespec="seconds"), budget_day(now).isoformat(), run_id, task, model, prompt_version,
+                    tokens_in, tokens_out, duration_ms, status, cost_rub, int(cached),
+                    mask_secrets(error) if error else error, endpoint or None))
 
     def kv_get(self, ns: str, key: str) -> str | None:
         rows = self._exec("SELECT value FROM kv WHERE ns=? AND key=?", (ns, key))
@@ -122,17 +167,19 @@ class Store:
 
     def journal(self, since_id: int = 0) -> list[dict]:
         cols = ["id", "ts", "day", "run_id", "task", "model", "prompt_version", "tokens_in", "tokens_out", "duration_ms",
-                "status", "cost_rub", "cached", "error"]
+                "status", "cost_rub", "cached", "error", "endpoint"]
         return [dict(zip(cols, r)) for r in
                 self._exec(f"SELECT {', '.join(cols)} FROM llm_calls WHERE id>? ORDER BY id", (since_id,))]
 
     def spent(self, day: date | None = None) -> float:
-        d = (day or date.today()).isoformat()
+        d = (day or budget_day()).isoformat()
         return float(self._exec("SELECT COALESCE(SUM(cost_rub), 0) FROM llm_calls WHERE day=?", (d,))[0][0])
 
 
 class Budget:
-    """normal -> degraded (>= degrade_at от лимита) -> exceeded (>= 100%). Расход берётся из журнала за сегодня."""
+    """normal -> degraded (>= degrade_at от лимита) -> exceeded (>= 100% или шлюз сообщил об исчерпании бюджета).
+    Расход берётся из журнала за текущее окно (с 03:00 МСК). После ответа шлюза «Budget has been exceeded»
+    клиент работает только из кеша до ближайших 03:00 МСК (метка лежит в kv, переживает перезапуск)."""
 
     def __init__(self, store: Store, limit_rub: float, degrade_at: float = 0.8):
         self.store, self.limit_rub, self.degrade_at = store, limit_rub, degrade_at
@@ -140,7 +187,19 @@ class Budget:
     def spent_today(self) -> float:
         return self.store.spent()
 
+    def blocked_until(self) -> datetime | None:
+        raw = self.store.kv_get("budget", "cache_only_until")
+        until = datetime.fromisoformat(raw) if raw else None
+        return until if until and until > now_msk() else None
+
+    def block(self) -> datetime:
+        until = next_reset()
+        self.store.kv_put("budget", "cache_only_until", until.isoformat())
+        return until
+
     def state(self) -> str:
+        if self.blocked_until():
+            return "exceeded"
         spent = self.spent_today()
         if spent >= self.limit_rub:
             return "exceeded"
@@ -154,6 +213,8 @@ class LLMClient(ABC):
         llm = cfg["llm"]
         self.models: dict[str, str] = llm["models"]
         self.prices: dict = llm.get("prices") or {}
+        self.price_unit_tokens = float(llm.get("price_unit_tokens") or 1_000_000)   # TODO(align): единица не подтверждена
+        self.card_model_final: str = (llm.get("card_model_final") or "") if llm.get("final_run") else ""
         self.net_retries = int(llm.get("net_retries", 2))
         self.retry_pause_s = float(llm.get("retry_pause_s", 1.0))
         self.store = store or Store(resolve_path(cfg["paths"]["store"]))
@@ -170,7 +231,13 @@ class LLMClient(ABC):
         """Список моделей, которые видит ключ (None, если узнать нельзя)."""
         return None
 
+    def key_info(self) -> dict | None:
+        """Остаток бюджета ключа (GET {base}/key/info); None, если узнать нельзя."""
+        return None
+
     def model_for(self, task: str) -> str:
+        if task == "card" and self.card_model_final:
+            return self.card_model_final
         try:
             return self.models[task]
         except KeyError:
@@ -184,7 +251,8 @@ class LLMClient(ABC):
                 log.warning("TODO(align): цены токенов для модели %s не заданы (llm.prices), стоимость = 0, "
                             "бюджет не расходуется", model)
             return 0.0
-        return tokens_in / 1000 * float(price.get("in", 0)) + tokens_out / 1000 * float(price.get("out", 0))
+        # токены рассуждений входят в tokens_out и оплачиваются по цене выхода
+        return (tokens_in * float(price.get("in", 0)) + tokens_out * float(price.get("out", 0))) / self.price_unit_tokens
 
     def complete(self, task: str, messages: list[dict], schema: type[BaseModel] | None = None,
                  run_id: str | None = None, *, prompt_version: str | None = None) -> Any:
@@ -212,7 +280,8 @@ class LLMClient(ABC):
                 err = str(e)[:300]
                 final = attempt == 1
                 self.store.log_call(**ctx, tokens_in=raw.tokens_in, tokens_out=raw.tokens_out, duration_ms=ms,
-                                    status="error" if final else "retry", cost_rub=cost, error=f"невалидный JSON: {err}")
+                                    status="error" if final else "retry", cost_rub=cost, error=f"невалидный JSON: {err}",
+                                    endpoint=raw.endpoint)
                 if final:
                     raise LLMFormatError(f"ответ модели {model} не прошёл проверку после повтора: {err}") from e
                 msgs = messages + [
@@ -221,7 +290,7 @@ class LLMClient(ABC):
                 ]
                 continue
             self.store.log_call(**ctx, tokens_in=raw.tokens_in, tokens_out=raw.tokens_out, duration_ms=ms,
-                                status="ok", cost_rub=cost)
+                                status="ok", cost_rub=cost, endpoint=raw.endpoint)
             self.store.cache_put(key, result.model_dump_json() if isinstance(result, BaseModel)
                                  else json.dumps(result, ensure_ascii=False))
             return result
@@ -232,9 +301,13 @@ class LLMClient(ABC):
         if state == "normal":
             return
         spent, limit = self.budget.spent_today(), self.budget.limit_rub
-        if state == "exceeded":
-            msg = f"дневной лимит {limit:g} ₽ исчерпан (потрачено {spent:.2f} ₽)"
+        until = self.budget.blocked_until()
+        if until:
+            msg = f"шлюз сообщил об исчерпании бюджета: только кеш до {until:%d.%m.%Y %H:%M} МСК"
             exc: BudgetExceeded = BudgetExceeded(msg)
+        elif state == "exceeded":
+            msg = f"дневной лимит {limit:g} ₽ исчерпан (потрачено {spent:.2f} ₽)"
+            exc = BudgetExceeded(msg)
         else:
             msg = f"режим деградации: потрачено {spent:.2f} из {limit:g} ₽, ответ только из кеша"
             exc = DegradedMode(msg)
@@ -248,6 +321,13 @@ class LLMClient(ABC):
             t0 = time.perf_counter()
             try:
                 raw = self.call_raw(model, messages, schema, ctx["task"])
+            except BudgetExceeded as e:           # ответ шлюза: бюджет общий на ключ, ни повтора, ни резервного адреса
+                ms = int((time.perf_counter() - t0) * 1000)
+                until = self.budget.block()
+                msg = f"{e}; только кеш до {until:%d.%m.%Y %H:%M} МСК"
+                log.error("бюджет исчерпан по ответу шлюза: %s", msg)
+                self.store.log_call(**ctx, duration_ms=ms, status="error", error=msg[:300])
+                raise BudgetExceeded(msg) from None
             except LLMNetworkError as e:
                 ms = int((time.perf_counter() - t0) * 1000)
                 last = attempt == self.net_retries

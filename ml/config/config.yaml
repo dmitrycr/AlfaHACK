@@ -7,23 +7,35 @@ paths:
   reports: reports
 llm:
   mode: mock                 # mock | http (переопределяется LLM_MODE)
-  base_url: ${LLM_BASE_URL}  # TODO(align): адрес и формат запроса у организаторов
+  base_url: ${LLM_BASE_URL:-https://changellenge.up.railway.app/v1}                # основной адрес организаторов
+  base_url_reserve: ${LLM_BASE_URL_RESERVE:-https://api.alfahack-gateway26.ru/v1}  # резервный: один заход при сети/5xx основного
   timeout_s: 60
   net_retries: 2
   retry_pause_s: 1.0
   models:
-    tagging: gemma-4-26b-a4b
-    link_check: gemma-4-26b-a4b
-    card: glm-5.3-flash
-    selfcheck: gemma-4-26b-a4b
-    chat: qwen3.6-35b-a3b
-    profile_hypothesis: qwen3.6-35b-a3b
-  cheap_model: gemma-4-26b-a4b   # режим деградации
-  fallback: {tagging: qwen3.6-35b-a3b, card: deepseek-v4.1-flash}
+    tagging: google/gemma-4-26b-a4b-it
+    link_check: google/gemma-4-26b-a4b-it
+    card: z-ai/glm-5.3-flash
+    selfcheck: google/gemma-4-26b-a4b-it
+    chat: qwen/qwen3.6-35b-a3b
+    profile_hypothesis: qwen/qwen3.6-35b-a3b
+    fallback: deepseek/deepseek-v4.1-flash
+  card_model_final: moonshotai/kimi-k2.6   # модель карточек для финального прогона
+  final_run: false           # true = карточки идут на card_model_final вместо models.card
+  cheap_model: google/gemma-4-26b-a4b-it   # режим деградации
   daily_limit_rub: 500
   degrade_at: 0.8
   cache_only_at: 0.95
-  prices: {}                 # TODO(align): {model: {in: руб за 1000 токенов, out: ...}}
+  price_unit_tokens: 1000000  # TODO(align): организаторы не подтвердили, что цена дана «за 1 млн токенов»; проверить check_llm.py
+  prices:                    # ₽ за price_unit_tokens токенов; токены рассуждений оплачиваются по цене выхода
+    z-ai/glm-5.3-flash: {in: 5.10, out: 17.00}
+    deepseek/deepseek-v4.1-flash: {in: 10.00, out: 21.00}
+    google/gemma-4-26b-a4b-it: {in: 4.48, out: 23.00}
+    qwen/qwen3-vl-30b-a3b-instruct: {in: 14.30, out: 57.10}
+    qwen/qwen3.6-35b-a3b: {in: 5.33, out: 74.00}
+    moonshotai/kimi-k2.6: {in: 51.00, out: 270.00}
+  disable_reasoning: []      # модели, которым отключаем рассуждения
+  disable_reasoning_param: {reasoning: {enabled: false}}   # TODO(align): формат параметра у шлюза не известен, заглушка
 ranking:
   channels_enabled: [отраслевой, конкурент, спрос, предложение, финансовый, валютный, сырьевой, региональный, регуляторный]
   default_weights: {отраслевой: 1.0, конкурент: 0.7, финансовый: 0.2, валютный: 0.2, сырьевой: 0.0, региональный: 0.5, регуляторный: 0.6}
