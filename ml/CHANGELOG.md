@@ -11,3 +11,6 @@
 
 ## 0.1.2
 - `ProfileIn`: поле `features: Optional[dict]` (`{"buyers": {...}|None, "suppliers": {...}|None}`, см. `profile/features.py`) добавлено на этапе профилей; запись в CHANGELOG дописана задним числом. Остальные поля и `check_insight` не менялись.
+
+## 0.1.3
+- `ProfileIn`: поле `out_of_scope: bool = False` - сектор клиента выключен в `config/sectors.yaml` (`enabled: false`); профиль строится, но в экспорт для команды не попадает. В Company Service поле не уходит.

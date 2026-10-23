@@ -8,6 +8,8 @@ from pathlib import Path
 import pandas as pd
 
 from ml.config import get_config, resolve_path
+from ml.profile.builder import split_in_scope
+from ml.refdata import load_refdata
 from ml.company_format import adapt_profile, export_company, export_profile, validate_company_profile
 
 CSV_COLS = ["id", "name", "okved_section", "okved_class", "okved_group", "sector", "region", "revenue_minor",
@@ -24,7 +26,11 @@ def main() -> None:
     ap.add_argument("--include-features", action="store_true", help="добавить features (по умолчанию export.include_features)")
     a = ap.parse_args()
     raw = json.loads(Path(a.src).read_text(encoding="utf-8"))
-    profiles = [adapt_profile(p) for cid, p in raw.get("profiles", raw).items() if not cid.startswith("_")]
+    inside, out_of_scope = split_in_scope({cid: p for cid, p in raw.get("profiles", raw).items() if not cid.startswith("_")},
+                                          load_refdata())
+    if out_of_scope:
+        print(f"out_of_scope, в экспорт не попали (сектор выключен): {len(out_of_scope)}")
+    profiles = [adapt_profile(p) for p in inside.values()]
     include = a.include_features or bool(cfg.get("export", {}).get("include_features", False))
     docs = [export_profile(p, version=a.version, synthetic=a.synthetic, include_features=include) for p in profiles]
     companies = [export_company(p) for p in profiles]

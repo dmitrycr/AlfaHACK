@@ -14,6 +14,11 @@ from ml.tagging import Tagger, build_tagging_llm
 from ml.tagging.tagger import PROMPT_VERSION
 
 
+def sectors_match(expected: list, got: list[str]) -> bool:
+    """Каждый ожидаемый сектор найден среди ответа; элемент-список = альтернативы (подходит любой из них)."""
+    return all(any(x in got for x in (e if isinstance(e, list) else [e])) for e in expected)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", required=True)
@@ -79,6 +84,20 @@ def main(argv: list[str] | None = None) -> int:
           f"событий: {len(results)}; вызовов LLM: 0 (всё из кеша или без вызова)")
     print(f"помечено шумом: {sum(r.is_noise for _, r in results)}; без Event: {sum(r.event is None for _, r in results)}; "
           f"подозрительных: {sum(r.suspicious for _, r in results)}; расход: {sum(j['cost_rub'] for j in journal):.2f} ₽")
+    sec_total = sec_ok = 0
+    sec_bad = []
+    for ev, res in results:
+        if ev.get("expected_sectors") and res.event is not None:
+            sec_total += 1
+            if sectors_match(ev["expected_sectors"], res.event.sectors):
+                sec_ok += 1
+            else:
+                sec_bad.append(ev["event_id"])
+    st = tagger.sector_stats
+    print(f"названия секторов из ответов модели: точных {st['exact']}, приведено через алиасы {st['alias']}, "
+          f"не сопоставлено {st['unmatched']}, отброшено как выключенные {st['disabled']}")
+    if sec_total:
+        print(f"сектора: ожидаемые найдены в {sec_ok} из {sec_total}" + (f"; расходятся: {', '.join(sec_bad)}" if sec_bad else ""))
     if type_total:
         print(f"совпало с ожидаемым (тип, либо шум/подозрительность/пустой Event): {type_ok} из {type_total}")
     return 0

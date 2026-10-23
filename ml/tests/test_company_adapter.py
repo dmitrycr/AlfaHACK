@@ -117,7 +117,9 @@ def test_export_script_no_extra_file_and_csv(demo, tmp_path):
                     "--out-dir", str(tmp_path)], check=True, cwd=root)
     prof = json.loads((tmp_path / "profiles.json").read_text(encoding="utf-8"))
     assert not (tmp_path / "profiles_extra.json").exists()
-    assert {d["company_id"] for d in prof} == {p.client_id for p in demo}
+    from ml.refdata import load_refdata
+    ref = load_refdata()                                     # профили выключенных секторов в экспорт не идут
+    assert {d["company_id"] for d in prof} == {p.client_id for p in demo if ref.is_enabled(p.sector)}
     assert all("аффилированный" not in json.dumps(d, ensure_ascii=False) for d in prof)
     assert len(pd.read_csv(tmp_path / "companies.csv").columns) == 13
 
@@ -138,4 +140,6 @@ def test_export_script_features_flag(tmp_path):
         subprocess.run([sys.executable, str(root / "scripts" / "export_profiles.py"), "--src", str(fx), "--out-dir", str(out),
                         *flags], check=True, cwd=root)
         docs = json.loads((out / "profiles.json").read_text(encoding="utf-8"))
-        assert all(("features" in d) is want for d in docs) and len(docs) == 5
+        from ml.refdata import load_refdata
+        n_in_scope = sum(load_refdata().is_enabled(v["sector"]) for v in src["profiles"].values())
+        assert all(("features" in d) is want for d in docs) and len(docs) == n_in_scope

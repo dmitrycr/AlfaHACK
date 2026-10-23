@@ -50,6 +50,10 @@ def normalize_okved(code: str | None) -> dict:
     return {"section": section_of_class(cls), "class": cls, "group": group or cls}
 
 
+def _norm_sector(s: str) -> str:
+    return re.sub(r"\s+", " ", s.casefold().replace("ё", "е")).strip(" .,;:\"'«»")
+
+
 def _wb(alias: str) -> re.Pattern:
     return re.compile(r"(?<![\w])" + re.escape(alias) + r"\w{0,3}(?!\w)", re.IGNORECASE | re.UNICODE)
 
@@ -62,6 +66,8 @@ class RefData:
     okved_classes: dict[str, str]
     okved_default: str
     okved_groups: dict[str, str] = field(default_factory=dict)          # группа ("49.5") сильнее класса
+    enabled: dict[str, bool] = field(default_factory=dict)              # sectors.yaml: enabled у каждого сектора
+    sector_alias: dict[str, str] = field(default_factory=dict)          # нормализованное написание -> каноничное название
     demand: dict[str, dict[str, float]] = field(default_factory=dict)   # from -> to -> strength
     supply: dict[str, dict[str, float]] = field(default_factory=dict)
     commodities: dict[str, dict[str, list[str]]] = field(default_factory=dict)
@@ -76,6 +82,18 @@ class RefData:
     @property
     def factor_names(self) -> list[str]:
         return list(self.factors)
+
+    @property
+    def enabled_sector_names(self) -> list[str]:
+        return [s for s in self.sectors if self.enabled.get(s, True)]
+
+    def is_enabled(self, sector: str | None) -> bool:
+        """Сектор участвует в промпте, профилях и экспорте. Неизвестное название считаем включённым (проверяется отдельно)."""
+        return self.enabled.get(sector, True) if sector else False
+
+    def canonical_sector(self, name: str | None) -> str | None:
+        """Ответ модели -> каноничное название сектора (точное, без учёта регистра или через aliases из sectors.yaml); иначе None."""
+        return self.sector_alias.get(_norm_sector(name or ""))
 
     def sector_of_class(self, cls: str | None) -> str:
         return self.okved_classes.get(str(cls)[:2], self.okved_default) if cls else self.okved_default
@@ -144,8 +162,14 @@ def load_refdata(config_dir: str | None = None) -> RefData:
     sec = yaml.safe_load((d / "sectors.yaml").read_text(encoding="utf-8"))
     comp = yaml.safe_load((d / "aliases.yaml").read_text(encoding="utf-8"))["companies"]
     ok = json.loads((d / "okved_to_sector.json").read_text(encoding="utf-8"))
-    ref = RefData(sectors=sec["sectors"], factors=sec["factors"], companies=comp,
-                  okved_classes=ok["classes"], okved_default=ok["default"], okved_groups=ok.get("groups", {}))
+    raw = sec["sectors"]                  # {название: {enabled, keywords, aliases}} (допускается и просто список ключевых слов)
+    kw = {n: (v.get("keywords", []) if isinstance(v, dict) else v) for n, v in raw.items()}
+    ref = RefData(sectors=kw, factors=sec["factors"], companies=comp,
+                  okved_classes=ok["classes"], okved_default=ok["default"], okved_groups=ok.get("groups", {}),
+                  enabled={n: bool(v.get("enabled", True)) if isinstance(v, dict) else True for n, v in raw.items()})
+    for n, v in raw.items():
+        for a in [n, *(v.get("aliases", []) if isinstance(v, dict) else [])]:
+            ref.sector_alias.setdefault(_norm_sector(a), n)
     for name, info in comp.items():
         for alias in sorted(set(info.get("aliases", [name]) + [name]), key=len, reverse=True):
             ref._alias_re.append((name, info["sector"], _wb(alias)))
@@ -155,9 +179,13 @@ def load_refdata(config_dir: str | None = None) -> RefData:
     }
     with open(d / "sector_matrix.csv", encoding="utf-8", newline="") as f:
         for r in csv.DictReader(f):
+            if not (ref.is_enabled(r["from_sector"]) and ref.is_enabled(r["to_sector"])):
+                continue                                   # выключенный сектор в матрице не участвует
             target = ref.demand if r["role"] == "demand" else ref.supply
             target.setdefault(r["from_sector"], {})[r["to_sector"]] = float(r["strength"])
     with open(d / "sector_commodities.csv", encoding="utf-8", newline="") as f:
         for r in csv.DictReader(f):
+            if not ref.is_enabled(r["sector"]):
+                continue
             ref.commodities.setdefault(r["sector"], {"produces": [], "buys": []})[r["role"]].append(r["commodity"])
     return ref

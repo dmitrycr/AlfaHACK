@@ -64,8 +64,8 @@ def make_channels(*, sector: str, okved: dict, region: str, products: dict[str, 
     for role, name, shares, cov_key, word in (("demand", "спрос", buyers, "buyers", "покупателей"),
                                               ("supply", "предложение", suppliers, "suppliers", "поставщиков")):
         cov = float(coverage.get(cov_key) or 0.0)
-        data = {s: min(1.0, v / cap) for s, v in shares.items() if v > 0}
-        mat = dict(ref.demand.get(sector, {})) if role == "demand" else dict(ref.supply.get(sector, {}))
+        data = {s: min(1.0, v / cap) for s, v in shares.items() if v > 0 and ref.is_enabled(s)}    # события выключенных секторов не бывает
+        mat = {s: v for s, v in (ref.demand if role == "demand" else ref.supply).get(sector, {}).items() if ref.is_enabled(s)}
         top_mat = dict(sorted(mat.items(), key=lambda kv: -kv[1])[:3])
         top_data = dict(sorted(data.items(), key=lambda kv: -kv[1])[:3])
         chosen: dict[str, tuple[float, str]] = {}
@@ -187,7 +187,8 @@ class ProfileBuilder:
             concentration=({"share": round(conc["share"], 4), "sector": conc["sector"], "region": conc["region"]}
                            if conc else None),
             commodities=commodities, coverage=coverage,
-            features={"buyers": buy["features"], "suppliers": sup["features"]})
+            features={"buyers": buy["features"], "suppliers": sup["features"]},
+            out_of_scope=not self.ref.is_enabled(sector))
 
     def clients_above_threshold(self) -> tuple[list[str], list[str]]:
         thr = float(self.cfg["profile"]["revenue_threshold"])
@@ -202,7 +203,9 @@ class ProfileBuilder:
         idx = {"benef": {k: v for k, v in sub[sub["BENEFICIARY"].isin(aset)].groupby("BENEFICIARY")},
                "payer": {k: v for k, v in sub[sub["PAYER"].isin(aset)].groupby("PAYER")}}
         profiles = {c: self.build_profile(c, idx).model_dump() for c in above}
-        return {"profiles": profiles, "below_threshold": below, "report": coverage_report(profiles)}
+        out_of_scope = {c: p["sector"] for c, p in profiles.items() if p["out_of_scope"]}    # сектор выключен (enabled: false)
+        return {"profiles": profiles, "below_threshold": below, "out_of_scope": out_of_scope,
+                "report": coverage_report(profiles)}
 
 
 def coverage_report(profiles: dict[str, dict]) -> dict:
@@ -222,8 +225,16 @@ def coverage_report(profiles: dict[str, dict]) -> dict:
             "top5_concentration": [{"client_id": cid, "share": s} for s, cid in conc]}
 
 
-def input_hash(data_dir: str | Path, cfg: dict) -> str:
+def split_in_scope(profiles: dict[str, dict], ref: RefData) -> tuple[dict[str, dict], dict[str, str]]:
+    """Профили для экспорта и {client_id: сектор} для out_of_scope. Смотрим и на пометку в профиле, и на текущий
+    enabled в sectors.yaml (флаг мог измениться после сборки)."""
+    inside = {c: p for c, p in profiles.items() if ref.is_enabled(p.get("sector")) and not p.get("out_of_scope")}
+    return inside, {c: p.get("sector") for c, p in profiles.items() if c not in inside}
+
+
+def input_hash(data_dir: str | Path, cfg: dict, ref: RefData | None = None) -> str:
     h = hashlib.sha256()
+    h.update(json.dumps(sorted((ref or load_refdata()).enabled_sector_names)).encode())      # переключение enabled пересобирает профили
     for name in ("df_Uid_data_hack.csv", "df_Uid_payment_hack.csv", "df_Fid_Uid_link_hack.csv"):
         p = Path(data_dir) / name
         if p.exists():
@@ -235,16 +246,16 @@ def input_hash(data_dir: str | Path, cfg: dict) -> str:
     return h.hexdigest()
 
 
-def build_and_cache(data_dir: str | Path, out_path: str | Path, cfg: dict, force: bool = False) -> dict:
+def build_and_cache(data_dir: str | Path, out_path: str | Path, cfg: dict, force: bool = False, ref: RefData | None = None) -> dict:
     """Пересчёт только при изменении входных файлов (PR-09)."""
     out = Path(out_path)
-    h = input_hash(data_dir, cfg)
+    h = input_hash(data_dir, cfg, ref)
     if out.exists() and not force:
         cached = json.loads(out.read_text(encoding="utf-8"))
         if cached.get("input_hash") == h:
             cached["from_cache"] = True
             return cached
-    res = ProfileBuilder(data_dir, cfg).build_all()
+    res = ProfileBuilder(data_dir, cfg, ref).build_all()
     res["input_hash"] = h
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")

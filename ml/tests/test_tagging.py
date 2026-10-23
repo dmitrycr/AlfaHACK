@@ -9,7 +9,7 @@ from ml.contract import Direction, Event, EventType, Horizon
 from ml.llm import INVALID, MockLLM
 from ml.services import tagging_app
 from ml.tagging import PROMPT_VERSION, Tagger, TagResult, build_tagging_llm, find_companies, sanitize
-from ml.tagging.tagger import LLMTags, load_vocab
+from ml.tagging.tagger import LLMTags, Vocab, load_vocab
 
 FX = Path(__file__).parent / "fixtures"
 NEWS = json.loads((FX / "news_30.json").read_text(encoding="utf-8"))
@@ -256,14 +256,14 @@ def test_api_budget_exceeded_is_503(cfg):
 
 # ---- tagging-v3: сектора из xlsx, определения типов, ключ кеша ------------------------------------------------
 
-def test_vocab_is_the_16_canonical_sectors_without_service_sector():
+def test_vocab_is_the_enabled_canonical_sectors():
     import yaml
 
     from ml.config import CONFIG_DIR
     sec = yaml.safe_load((CONFIG_DIR / "sectors.yaml").read_text(encoding="utf-8"))
-    assert len(VOCAB.sectors) == 16 and "Прочее" not in VOCAB.sectors and sec["service_sectors"] == ["Прочее"]
-    assert set(VOCAB.sectors) | {"Прочее"} == set(sec["sectors"])
-    assert "Горнодобыча (уголь, драгметаллы, алмазы)" in VOCAB.sectors and "Нефть и газ" in VOCAB.sectors
+    assert len(VOCAB.sectors) == 7 and "Прочее" not in VOCAB.sectors
+    assert {n for n, v in sec["sectors"].items() if v["enabled"]} == set(VOCAB.sectors) and sec["sectors"]["Прочее"]["enabled"] is False
+    assert len(sec["sectors"]) == 17 and "Металлургия" in VOCAB.sectors and "Нефть и газ" not in VOCAB.sectors
 
 
 def test_prompt_v3_has_type_definitions_examples_and_all_sectors(cfg):
@@ -287,5 +287,7 @@ def test_tag_cache_key_includes_prompt_version(cfg):
     t = make(cfg)
     assert PROMPT_VERSION in t.NS
     t.tag_event(ev())
-    assert t.llm.store.kv_get(f"tags:{PROMPT_VERSION}", "t1") is not None
+    assert t.llm.store.kv_get(t.NS, "t1") is not None and t.NS.startswith(f"tags:{PROMPT_VERSION}:")
     assert t.llm.store.kv_get("tags:tagging-v2", "t1") is None                  # теги прежней версии не подмешиваются
+    other = Tagger(MockLLM(cfg), cfg, vocab=Vocab(VOCAB.sectors[:-1], VOCAB.factors, VOCAB.factor_ids, VOCAB.ref))
+    assert other.NS != t.NS and other.llm.store.kv_get(other.NS, "t1") is None  # другой набор секторов = другой ключ кеша

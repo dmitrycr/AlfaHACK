@@ -2,8 +2,10 @@
 Новость - данные, а не инструкции: текст проходит guard.sanitize, значения из ответа модели ограничены списками."""
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
@@ -18,6 +20,7 @@ from ..config import CONFIG_DIR, get_config
 from ..contract import Event, SourceKind, SourceRef
 from ..llm import LLMFormatError, MockLLM, build_llm
 from ..llm.base import LLMClient
+from ..refdata import RefData, load_refdata
 from .aliases import find_companies
 from .guard import sanitize
 
@@ -70,18 +73,18 @@ class TagResult(BaseModel):
 
 @dataclass(frozen=True)
 class Vocab:
-    sectors: tuple[str, ...]
+    sectors: tuple[str, ...]          # только enabled-сектора: они идут в промпт и в Event.sectors
     factors: tuple[str, ...]          # идентификаторы контракта (key_rate, usd, ...)
     factor_ids: dict[str, str]        # русское имя из sectors.yaml -> идентификатор
+    ref: RefData | None = None        # справочник секторов: приведение названий к каноничным, enabled
 
 
 @lru_cache(maxsize=4)
 def load_vocab(config_dir: str | None = None) -> Vocab:
     d = Path(config_dir) if config_dir else CONFIG_DIR
-    sec = yaml.safe_load((d / "sectors.yaml").read_text(encoding="utf-8"))      # TODO(align): список секторов от команды
+    ref = load_refdata(config_dir)
     ids = yaml.safe_load((d / "factor_ids.yaml").read_text(encoding="utf-8"))
-    service = set(sec.get("service_sectors", []))                       # «Прочее» в списки для LLM и Event.sectors не входит
-    return Vocab(tuple(s for s in sec["sectors"] if s not in service), tuple(ids.values()), dict(ids))
+    return Vocab(tuple(ref.enabled_sector_names), tuple(ids.values()), dict(ids), ref)      # выключенные сектора (enabled: false) не входят
 
 
 def build_tagging_llm(cfg: dict | None = None) -> LLMClient:
@@ -91,6 +94,35 @@ def build_tagging_llm(cfg: dict | None = None) -> LLMClient:
         from .mock_rules import tagging_response
         client.responders.setdefault("tagging", tagging_response)
     return client
+
+
+def _canon_sectors(values: list[str], vocab: Vocab, eid: str, store=None, stats: Counter | None = None) -> list[str]:
+    """Названия секторов из ответа модели -> каноничные (через aliases в sectors.yaml). Несопоставленные и выключенные
+    (enabled: false) отбрасываются; несопоставленные пишутся в лог и в журнал LLM с event_id."""
+    out, unmatched = [], []
+    stats = stats if stats is not None else Counter()
+    for v in values:
+        v = str(v).strip()
+        canon = vocab.ref.canonical_sector(v) if vocab.ref else (v if v in vocab.sectors else None)
+        if canon is None:
+            if v:
+                unmatched.append(v)
+                stats["unmatched"] += 1
+        elif canon in vocab.sectors:
+            stats["exact" if canon == v else "alias"] += 1
+            if canon not in out:
+                out.append(canon)
+            if canon != v:
+                log.info("event %s: сектор %r приведён к %r", eid, v, canon)
+        else:
+            stats["disabled"] += 1
+            log.info("event %s: сектор %r выключен (enabled: false), отброшен", eid, canon)
+    if unmatched:
+        log.warning("event %s: сектора %s не сопоставлены с каноничными, отброшены", eid, unmatched)
+        if store is not None:
+            store.log_call(run_id=f"tag:{eid}", task="tagging", model=None, prompt_version=PROMPT_VERSION, status="note",
+                           error=f"event {eid}: сектора не сопоставлены с каноничными: {unmatched}")
+    return out
 
 
 def _keep(values: list[str], allowed, what: str, eid: str) -> list[str]:
@@ -108,7 +140,7 @@ def _keep(values: list[str], allowed, what: str, eid: str) -> list[str]:
 
 
 class Tagger:
-    NS = f"tags:{PROMPT_VERSION}"
+    NS = f"tags:{PROMPT_VERSION}"          # к нему добавляется хеш набора секторов в промпте (см. __init__)
 
     def __init__(self, llm: LLMClient | None = None, cfg: dict | None = None, vocab: Vocab | None = None,
                  now: Callable[[], datetime] | None = None):
@@ -118,6 +150,8 @@ class Tagger:
         self.max_chars = int(t.get("max_chars", 800))          # TODO(align): в config.yaml есть lead_chars=700, ТЗ требует 800
         self.min_chars = int(t.get("min_text_chars", 20))
         self.vocab = vocab or load_vocab()
+        self.NS = f"{Tagger.NS}:{hashlib.sha1(chr(10).join(sorted(self.vocab.sectors)).encode()).hexdigest()[:8]}"   # другой набор секторов = другой промпт
+        self.sector_stats: Counter = Counter()     # exact / alias (приведено через алиас) / unmatched / disabled
         self.template = PROMPT_PATH.read_text(encoding="utf-8")
         self._now = now or (lambda: datetime.now().astimezone())
 
@@ -191,7 +225,8 @@ class Tagger:
 
     def _build(self, eid: str, title: str, source: SourceRef, tags: LLMTags, found: list[dict],
                local_noise: str | None, suspicious: bool) -> TagResult:
-        sectors = _keep(tags.sectors + [c["sector"] for c in found], self.vocab.sectors, "sectors", eid)
+        sectors = _canon_sectors(tags.sectors, self.vocab, eid, self.llm.store, self.sector_stats)
+        sectors += [s for s in _canon_sectors([c["sector"] for c in found], self.vocab, eid) if s not in sectors]
         factors = _keep(tags.factors, self.vocab.factors, "factors", eid)
         okved = _keep(tags.okved, {v for v in map(str.strip, tags.okved) if _OKVED.match(v)}, "okved", eid)
         companies = list(dict.fromkeys([c["name"] for c in found] + [c.strip() for c in tags.companies if c.strip()]))

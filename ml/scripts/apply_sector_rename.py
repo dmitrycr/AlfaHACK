@@ -77,8 +77,10 @@ def main() -> int:
         p = Path(a.news)
         news = json.loads(p.read_text(encoding="utf-8"))
         for ev in news:
-            if "expected_sectors" in ev:
-                ev["expected_sectors"] = list(dict.fromkeys(n for s in ev["expected_sectors"] for n in rename(s, table)))
+            if "expected_sectors" in ev:       # старое название, ставшее двумя новыми, = альтернатива: подходит любой из двух
+                ev["expected_sectors"] = [s if isinstance(s, list) else
+                                          (rename(s, table)[0] if len(rename(s, table)) == 1 else rename(s, table))
+                                          for s in ev["expected_sectors"]]
         p.write_text(json.dumps(news, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"{p.name}: expected_sectors переведены")
     return 0

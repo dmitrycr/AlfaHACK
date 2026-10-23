@@ -6,6 +6,7 @@
 Использование: python scripts/make_sectors_from_players.py [--xlsx FILE] [--config-dir DIR] [--data-dir DIR]"""
 import _bootstrap  # noqa: F401
 import argparse
+import csv
 import json
 import re
 import sys
@@ -115,6 +116,45 @@ def build_okved_map(sectors: list[tuple[str, str]]) -> tuple[dict, dict, list[st
     return dict(sorted(classes.items())), dict(sorted(groups.items())), notes
 
 
+def sector_aliases(names: list[str], rename_csv: Path) -> tuple[dict[str, list[str]], list[str]]:
+    """Алиасы названий секторов для приведения ответа модели к каноничным: части названия («Машиностроение, автопром»),
+    название без скобок и прежние названия из sector_rename.csv. Алиас, который подходит двум секторам, не добавляется."""
+    cand: dict[str, set[str]] = defaultdict(set)         # casefold-алиас -> сектора, которым он подходит
+    shown: dict[str, str] = {}
+    for n in names:
+        base = re.sub(r"\s*\(.*?\)", "", n).strip()
+        parts = [p.strip() for p in re.split(r",| и ", base) if p.strip()]
+        commas = [p.strip() for p in base.split(",")]
+        variants = {base, *parts, *(", ".join(commas[:k]) for k in range(1, len(commas)))}
+        for v in variants:
+            if v.casefold() != n.casefold() and len(v) >= 2:
+                cand[v.casefold()].add(n)
+                shown.setdefault(v.casefold(), v)
+    notes = []
+    if rename_csv.exists():
+        old: dict[str, set[str]] = defaultdict(set)
+        with open(rename_csv, encoding="utf-8", newline="") as f:
+            for r in csv.DictReader(f):
+                if r["old"] and r["old"] != r["new"] and r["new"] in names:
+                    old[r["old"]].add(r["new"])
+        for o, targets in old.items():
+            if len(targets) == 1:
+                cand[o.casefold()].update(targets)
+                shown.setdefault(o.casefold(), o)
+            else:
+                notes.append(f"прежнее название «{o}» подходит нескольким секторам ({', '.join(sorted(targets))}): алиас не добавлен")
+    out: dict[str, list[str]] = {n: [] for n in names}
+    canon = {n.casefold() for n in names}
+    for key, owners in cand.items():
+        if key in canon:
+            continue
+        if len(owners) == 1:
+            out[next(iter(owners))].append(shown[key])
+        else:
+            notes.append(f"алиас «{shown[key]}» подходит нескольким секторам ({', '.join(sorted(owners))}): не добавлен")
+    return {n: sorted(v, key=str.casefold) for n, v in out.items()}, notes
+
+
 def old_aliases(path: Path) -> dict[str, list[str]]:
     if not path.exists():
         return {}
@@ -155,13 +195,20 @@ def main() -> int:
     # ---- sectors.yaml (факторы сохраняются из прежнего файла) ----
     old = yaml.safe_load((cfg_dir / "sectors.yaml").read_text(encoding="utf-8"))
     factors = old["factors"]
+    prev_enabled = {n: bool(v.get("enabled", True)) for n, v in old["sectors"].items() if isinstance(v, dict)}
+    aliases, alias_notes = sector_aliases(names, cfg_dir / "sector_rename.csv")
+    notes += alias_notes
     lines = ["# Сгенерировано scripts/make_sectors_from_players.py из players_by_sector.xlsx (лист «Сектора»): названия секторов точные,",
-             "# копируются в Event.sectors, Profile.sector, CounterpartyShare.sector символ в символ. Факторы сохраняются при перегенерации.",
-             "# Ключевые слова: начала слов в нижнем регистре; «re:...» - регулярное выражение.",
-             f"# TODO(align): «{OTHER}» - служебный сектор (ОКВЭД вне players_by_sector); в списки секторов для LLM и Event.sectors не попадает.",
-             f"service_sectors: [{q(OTHER)}]", "sectors:"]
+             "# копируются в Event.sectors, Profile.sector, CounterpartyShare.sector символ в символ. Факторы и флаги enabled сохраняются.",
+             "# enabled: false - сектор не попадает в промпт тегирования, матрицу и экспорт; профиль клиента строится, но с пометкой out_of_scope.",
+             "# keywords: начала слов в нижнем регистре; «re:...» - регулярное выражение. aliases: другие написания названия (ответ модели -> каноничное).",
+             f"# TODO(align): «{OTHER}» - служебный сектор (ОКВЭД вне players_by_sector), выключен.",
+             "# Включить сектор: docs/add_sector.md (enabled: true, строки матрицы и сырья, алиасы) - код менять не нужно.",
+             "sectors:"]
     for n in [*names, OTHER]:
-        lines.append(f"  {q(n)}: [{', '.join(q(w) for w in KEYWORDS[n])}]")
+        lines += [f"  {q(n)}:", f"    enabled: {'true' if prev_enabled.get(n, n != OTHER) else 'false'}",
+                  f"    keywords: [{', '.join(q(w) for w in KEYWORDS[n])}]",
+                  f"    aliases: [{', '.join(q(w) for w in aliases.get(n, []))}]"]
     lines.append("factors:")
     for n, words in factors.items():
         lines.append(f"  {q(n)}: [{', '.join(q(w) for w in words)}]")
