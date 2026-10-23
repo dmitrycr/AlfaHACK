@@ -19,6 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	CompanyService_CheckCompany_FullMethodName   = "/alfa.v1.CompanyService/CheckCompany"
+	CompanyService_EnsureCompany_FullMethodName  = "/alfa.v1.CompanyService/EnsureCompany"
 	CompanyService_GetCompany_FullMethodName     = "/alfa.v1.CompanyService/GetCompany"
 	CompanyService_GetProfile_FullMethodName     = "/alfa.v1.CompanyService/GetProfile"
 	CompanyService_ReplaceProfile_FullMethodName = "/alfa.v1.CompanyService/ReplaceProfile"
@@ -28,6 +30,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CompanyServiceClient interface {
+	CheckCompany(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	EnsureCompany(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	GetCompany(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	GetProfile(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	ReplaceProfile(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
@@ -39,6 +43,26 @@ type companyServiceClient struct {
 
 func NewCompanyServiceClient(cc grpc.ClientConnInterface) CompanyServiceClient {
 	return &companyServiceClient{cc}
+}
+
+func (c *companyServiceClient) CheckCompany(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, CompanyService_CheckCompany_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *companyServiceClient) EnsureCompany(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, CompanyService_EnsureCompany_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *companyServiceClient) GetCompany(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
@@ -75,6 +99,8 @@ func (c *companyServiceClient) ReplaceProfile(ctx context.Context, in *Request, 
 // All implementations must embed UnimplementedCompanyServiceServer
 // for forward compatibility.
 type CompanyServiceServer interface {
+	CheckCompany(context.Context, *Request) (*Response, error)
+	EnsureCompany(context.Context, *Request) (*Response, error)
 	GetCompany(context.Context, *Request) (*Response, error)
 	GetProfile(context.Context, *Request) (*Response, error)
 	ReplaceProfile(context.Context, *Request) (*Response, error)
@@ -88,6 +114,12 @@ type CompanyServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCompanyServiceServer struct{}
 
+func (UnimplementedCompanyServiceServer) CheckCompany(context.Context, *Request) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckCompany not implemented")
+}
+func (UnimplementedCompanyServiceServer) EnsureCompany(context.Context, *Request) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method EnsureCompany not implemented")
+}
 func (UnimplementedCompanyServiceServer) GetCompany(context.Context, *Request) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCompany not implemented")
 }
@@ -116,6 +148,42 @@ func RegisterCompanyServiceServer(s grpc.ServiceRegistrar, srv CompanyServiceSer
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&CompanyService_ServiceDesc, srv)
+}
+
+func _CompanyService_CheckCompany_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompanyServiceServer).CheckCompany(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompanyService_CheckCompany_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompanyServiceServer).CheckCompany(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CompanyService_EnsureCompany_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompanyServiceServer).EnsureCompany(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompanyService_EnsureCompany_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompanyServiceServer).EnsureCompany(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _CompanyService_GetCompany_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -180,6 +248,14 @@ var CompanyService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CompanyServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "CheckCompany",
+			Handler:    _CompanyService_CheckCompany_Handler,
+		},
+		{
+			MethodName: "EnsureCompany",
+			Handler:    _CompanyService_EnsureCompany_Handler,
+		},
+		{
 			MethodName: "GetCompany",
 			Handler:    _CompanyService_GetCompany_Handler,
 		},
@@ -197,16 +273,18 @@ var CompanyService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	NewsService_ListArticles_FullMethodName  = "/alfa.v1.NewsService/ListArticles"
-	NewsService_GetArticle_FullMethodName    = "/alfa.v1.NewsService/GetArticle"
-	NewsService_Submit_FullMethodName        = "/alfa.v1.NewsService/Submit"
-	NewsService_GetSubmission_FullMethodName = "/alfa.v1.NewsService/GetSubmission"
+	NewsService_GetArticleRevision_FullMethodName = "/alfa.v1.NewsService/GetArticleRevision"
+	NewsService_ListArticles_FullMethodName       = "/alfa.v1.NewsService/ListArticles"
+	NewsService_GetArticle_FullMethodName         = "/alfa.v1.NewsService/GetArticle"
+	NewsService_Submit_FullMethodName             = "/alfa.v1.NewsService/Submit"
+	NewsService_GetSubmission_FullMethodName      = "/alfa.v1.NewsService/GetSubmission"
 )
 
 // NewsServiceClient is the client API for NewsService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NewsServiceClient interface {
+	GetArticleRevision(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	ListArticles(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	GetArticle(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	Submit(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
@@ -219,6 +297,16 @@ type newsServiceClient struct {
 
 func NewNewsServiceClient(cc grpc.ClientConnInterface) NewsServiceClient {
 	return &newsServiceClient{cc}
+}
+
+func (c *newsServiceClient) GetArticleRevision(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, NewsService_GetArticleRevision_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *newsServiceClient) ListArticles(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
@@ -265,6 +353,7 @@ func (c *newsServiceClient) GetSubmission(ctx context.Context, in *Request, opts
 // All implementations must embed UnimplementedNewsServiceServer
 // for forward compatibility.
 type NewsServiceServer interface {
+	GetArticleRevision(context.Context, *Request) (*Response, error)
 	ListArticles(context.Context, *Request) (*Response, error)
 	GetArticle(context.Context, *Request) (*Response, error)
 	Submit(context.Context, *Request) (*Response, error)
@@ -279,6 +368,9 @@ type NewsServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedNewsServiceServer struct{}
 
+func (UnimplementedNewsServiceServer) GetArticleRevision(context.Context, *Request) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetArticleRevision not implemented")
+}
 func (UnimplementedNewsServiceServer) ListArticles(context.Context, *Request) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListArticles not implemented")
 }
@@ -310,6 +402,24 @@ func RegisterNewsServiceServer(s grpc.ServiceRegistrar, srv NewsServiceServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&NewsService_ServiceDesc, srv)
+}
+
+func _NewsService_GetArticleRevision_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NewsServiceServer).GetArticleRevision(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NewsService_GetArticleRevision_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NewsServiceServer).GetArticleRevision(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _NewsService_ListArticles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -392,6 +502,10 @@ var NewsService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*NewsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "GetArticleRevision",
+			Handler:    _NewsService_GetArticleRevision_Handler,
+		},
+		{
 			MethodName: "ListArticles",
 			Handler:    _NewsService_ListArticles_Handler,
 		},
@@ -413,14 +527,18 @@ var NewsService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	EventService_ListEvents_FullMethodName = "/alfa.v1.EventService/ListEvents"
-	EventService_GetEvent_FullMethodName   = "/alfa.v1.EventService/GetEvent"
+	EventService_GetPreparedEvent_FullMethodName   = "/alfa.v1.EventService/GetPreparedEvent"
+	EventService_ListPreparedEvents_FullMethodName = "/alfa.v1.EventService/ListPreparedEvents"
+	EventService_ListEvents_FullMethodName         = "/alfa.v1.EventService/ListEvents"
+	EventService_GetEvent_FullMethodName           = "/alfa.v1.EventService/GetEvent"
 )
 
 // EventServiceClient is the client API for EventService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventServiceClient interface {
+	GetPreparedEvent(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	ListPreparedEvents(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	ListEvents(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 	GetEvent(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
 }
@@ -431,6 +549,26 @@ type eventServiceClient struct {
 
 func NewEventServiceClient(cc grpc.ClientConnInterface) EventServiceClient {
 	return &eventServiceClient{cc}
+}
+
+func (c *eventServiceClient) GetPreparedEvent(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, EventService_GetPreparedEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *eventServiceClient) ListPreparedEvents(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, EventService_ListPreparedEvents_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *eventServiceClient) ListEvents(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
@@ -457,6 +595,8 @@ func (c *eventServiceClient) GetEvent(ctx context.Context, in *Request, opts ...
 // All implementations must embed UnimplementedEventServiceServer
 // for forward compatibility.
 type EventServiceServer interface {
+	GetPreparedEvent(context.Context, *Request) (*Response, error)
+	ListPreparedEvents(context.Context, *Request) (*Response, error)
 	ListEvents(context.Context, *Request) (*Response, error)
 	GetEvent(context.Context, *Request) (*Response, error)
 	mustEmbedUnimplementedEventServiceServer()
@@ -469,6 +609,12 @@ type EventServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedEventServiceServer struct{}
 
+func (UnimplementedEventServiceServer) GetPreparedEvent(context.Context, *Request) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPreparedEvent not implemented")
+}
+func (UnimplementedEventServiceServer) ListPreparedEvents(context.Context, *Request) (*Response, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPreparedEvents not implemented")
+}
 func (UnimplementedEventServiceServer) ListEvents(context.Context, *Request) (*Response, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListEvents not implemented")
 }
@@ -494,6 +640,42 @@ func RegisterEventServiceServer(s grpc.ServiceRegistrar, srv EventServiceServer)
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&EventService_ServiceDesc, srv)
+}
+
+func _EventService_GetPreparedEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventServiceServer).GetPreparedEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EventService_GetPreparedEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventServiceServer).GetPreparedEvent(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EventService_ListPreparedEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventServiceServer).ListPreparedEvents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EventService_ListPreparedEvents_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventServiceServer).ListPreparedEvents(ctx, req.(*Request))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _EventService_ListEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -539,6 +721,14 @@ var EventService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "alfa.v1.EventService",
 	HandlerType: (*EventServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetPreparedEvent",
+			Handler:    _EventService_GetPreparedEvent_Handler,
+		},
+		{
+			MethodName: "ListPreparedEvents",
+			Handler:    _EventService_ListPreparedEvents_Handler,
+		},
 		{
 			MethodName: "ListEvents",
 			Handler:    _EventService_ListEvents_Handler,

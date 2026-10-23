@@ -1,0 +1,38 @@
+{
+  "workflow_id": "",
+  "schema_version": "backend-llm-v1",
+  "event_version": 2,
+  "input_revision": 1,
+  "scope": "public",
+  "prompt_version": "tag-backend-v1",
+  "vocabulary_version": "ml-stage1-v1",
+  "provider_version": "mock-v1",
+  "synthetic": true,
+  "event": {
+    "event_id": "event-test",
+    "title": "Изменение ключевой ставки",
+    "summary": "Изменение ключевой ставки",
+    "sources": [
+      {
+        "url": "https://news.example.test/rate",
+        "name": "Синтетический источник",
+        "published_at": "2026-10-23T09:00:00Z",
+        "kind": "news"
+      }
+    ],
+    "type": "macro",
+    "sectors": [
+      "Финансы"
+    ],
+    "okved": [],
+    "companies": [],
+    "regions": [],
+    "factors": [
+      "ставка"
+    ],
+    "direction": "unclear",
+    "horizon": "short",
+    "importance": 4,
+    "collected_at": "2026-10-23T10:00:00Z"
+  }
+}

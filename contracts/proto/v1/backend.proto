@@ -12,17 +12,22 @@ message Request {
 }
 message Response { bytes payload = 1; }
 service CompanyService {
+  rpc CheckCompany(Request) returns (Response);
+  rpc EnsureCompany(Request) returns (Response);
   rpc GetCompany(Request) returns (Response);
   rpc GetProfile(Request) returns (Response);
   rpc ReplaceProfile(Request) returns (Response);
 }
 service NewsService {
+  rpc GetArticleRevision(Request) returns (Response);
   rpc ListArticles(Request) returns (Response);
   rpc GetArticle(Request) returns (Response);
   rpc Submit(Request) returns (Response);
   rpc GetSubmission(Request) returns (Response);
 }
 service EventService {
+  rpc GetPreparedEvent(Request) returns (Response);
+  rpc ListPreparedEvents(Request) returns (Response);
   rpc ListEvents(Request) returns (Response);
   rpc GetEvent(Request) returns (Response);
 }

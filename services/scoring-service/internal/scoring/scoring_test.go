@@ -12,11 +12,24 @@ import (
 func fixture() Request {
 	now := time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
 	published := now.Add(-time.Hour)
-	return Request{Company: model.Company{ID: "C1", Sector: "Steel", Region: "R", OKVED: model.OKVED{Class: "24"}},
+	return Request{Company: model.Company{ID: "C1", Sector: "Steel", Region: "R", OKVED: &model.OKVED{Class: "24"}},
 		Profile: model.Profile{CompanyID: "C1", Version: 2, RulesetVersion: "profiles-v1", BuiltAt: now.Add(-24 * time.Hour), FactorExposure: map[string]*float64{}, Channels: []model.Channel{
 			{Name: "industry", Weight: 1, Source: "data", Evidence: []string{"okved:24"}},
 			{Name: "demand", Sector: "Construction", Weight: .5, Source: "data", Evidence: []string{"payments:aggregate"}},
 		}}, AsOf: now, Events: []Event{{ID: "E1", Version: 3, Scope: "public", PublishedAt: &published, Tags: model.Tags{Type: "отраслевое", Sectors: []string{"Steel"}, Importance: 5, InputRevision: 3, ProviderVersion: "tags-v1"}}}}
+}
+func TestCompanyWithoutOKVEDUsesSectorMatch(t *testing.T) {
+	r := fixture()
+	r.Company.OKVED = nil
+	cfg := DefaultConfig()
+	cfg.MinEvents = 1
+	got, err := cfg.Rank(r)
+	if err != nil || len(got.Items) != 1 {
+		t.Fatalf("ranking without enriched OKVED: result=%+v error=%v", got, err)
+	}
+	if math.Abs(got.Items[0].Score-2.0/3) > 1e-12 {
+		t.Fatalf("expected sector-based ranking, got %v", got.Items[0].Score)
+	}
 }
 func TestScoreExplainsEveryContribution(t *testing.T) {
 	r := fixture()

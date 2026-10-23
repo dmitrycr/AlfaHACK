@@ -71,6 +71,13 @@ func (m *memoryAuth) DeleteSession(_ context.Context, hash string) error {
 
 type companyMock struct{ key string }
 
+func (m companyMock) CheckCompany(ctx context.Context, r *rpc.Request, opts ...grpc.CallOption) (*rpc.Response, error) {
+	return nil, errors.New("not exposed")
+}
+func (m companyMock) EnsureCompany(ctx context.Context, r *rpc.Request, opts ...grpc.CallOption) (*rpc.Response, error) {
+	return nil, errors.New("not exposed")
+}
+
 func (m companyMock) GetCompany(ctx context.Context, r *rpc.Request, _ ...grpc.CallOption) (*rpc.Response, error) {
 	md, _ := metadata.FromOutgoingContext(ctx)
 	values := md.Get("authorization")
@@ -93,7 +100,7 @@ func (m companyMock) ReplaceProfile(context.Context, *rpc.Request, ...grpc.CallO
 func setup(t *testing.T) (*http.Client, *httptest.Server, *service.Auth) {
 	t.Helper()
 	hash, _ := bcrypt.GenerateFromPassword([]byte("DemoOnly-2026!"), 4)
-	store := &memoryAuth{users: map[string]service.User{"metal@example.test": {ID: "metal-user", Email: "metal@example.test", CompanyID: "company-metal", PasswordHash: hash}, "build@example.test": {ID: "build-user", Email: "build@example.test", CompanyID: "company-build", PasswordHash: hash}}, sessions: map[string]service.Session{}, attempts: map[string]int{}}
+	store := &memoryAuth{users: map[string]service.User{"metal@example.test": {ID: "metal-user", Email: "metal@example.test", CompanyID: "company-metal", EmailVerified: true, AccessStatus: "active", PasswordHash: hash}, "build@example.test": {ID: "build-user", Email: "build@example.test", CompanyID: "company-build", EmailVerified: true, AccessStatus: "active", PasswordHash: hash}}, sessions: map[string]service.Session{}, attempts: map[string]int{}}
 	auth := service.NewAuth(store)
 	key := strings.Repeat("k", 32)
 	api := &API{Auth: auth, Key: key, Origin: "http://frontend.test", Company: companyMock{key}}

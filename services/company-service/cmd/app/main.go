@@ -2,6 +2,7 @@ package main
 
 import (
 	"alfa.local/company-service/internal/repository/postgres"
+	"alfa.local/company-service/internal/service"
 	transport "alfa.local/company-service/internal/transport/grpc"
 	"alfa.local/company-service/migrations"
 	"alfa.local/shared/model"
@@ -34,7 +35,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer pool.Close()
-	if e = platform.Migrate(ctx, pool, "company", migrations.SQL); e != nil {
+	if e = migrations.Apply(ctx, pool); e != nil {
 		slog.Error("migration failed", "error", e)
 		os.Exit(1)
 	}
@@ -57,7 +58,17 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	e = platform.Serve(ctx, "company-service", pool, func(s *grpc.Server) { rpc.RegisterCompanyServiceServer(s, &transport.Server{Store: store}) }, nil)
+	var registry service.CompanyRegistry
+	if platform.Env("APP_ENV", "development") != "production" {
+		if platform.Env("COMPANY_REGISTRY_MODE", "mock") != "mock" {
+			slog.Error("only mock company registry is implemented")
+			os.Exit(1)
+		}
+		registry = service.NewMockRegistry()
+	}
+	e = platform.Serve(ctx, "company-service", pool, func(s *grpc.Server) {
+		rpc.RegisterCompanyServiceServer(s, &transport.Server{Store: store, Registry: registry})
+	}, nil)
 	if e != nil {
 		slog.Error("service failed", "error", e)
 		os.Exit(1)

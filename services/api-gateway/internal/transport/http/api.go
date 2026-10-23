@@ -21,14 +21,17 @@ import (
 )
 
 type API struct {
-	Auth      *service.Auth
-	Company   rpc.CompanyServiceClient
-	News      rpc.NewsServiceClient
-	Events    rpc.EventServiceClient
-	Analytics rpc.AnalyticsServiceClient
-	Key       string
-	Origin    string
-	Secure    bool
+	Auth         *service.Auth
+	Registration *service.Registration
+	Company      rpc.CompanyServiceClient
+	News         rpc.NewsServiceClient
+	Events       rpc.EventServiceClient
+	Analytics    rpc.AnalyticsServiceClient
+	AI           rpc.AIServiceClient
+	Insights     rpc.InsightServiceClient
+	Key          string
+	Origin       string
+	Secure       bool
 }
 
 const sessionCookie = "alfa_session"
@@ -41,8 +44,12 @@ func (a *API) Handler() *http.ServeMux {
 		w.Write(contracts.OpenAPI)
 	})
 	m.HandleFunc("POST /api/v1/auth/login", a.login)
-	m.HandleFunc("POST /api/v1/auth/logout", a.protect(a.logout))
-	m.HandleFunc("GET /api/v1/auth/me", a.protect(a.me))
+	m.HandleFunc("POST /api/v1/auth/register", a.register)
+	m.HandleFunc("POST /api/v1/auth/company-check", a.checkCompany)
+	m.HandleFunc("POST /api/v1/auth/verify-email", a.verifyEmail)
+	m.HandleFunc("POST /api/v1/auth/resend-verification", a.resendVerification)
+	m.HandleFunc("POST /api/v1/auth/logout", a.protectAccount(a.logout))
+	m.HandleFunc("GET /api/v1/auth/me", a.protectAccount(a.me))
 	m.HandleFunc("GET /api/v1/companies/current", a.protect(a.proxy("company-service", func(ctx context.Context, r *rpc.Request) (*rpc.Response, error) { return a.Company.GetCompany(ctx, r) })))
 	m.HandleFunc("GET /api/v1/companies/current/profile", a.protect(a.proxy("company-service", func(ctx context.Context, r *rpc.Request) (*rpc.Response, error) { return a.Company.GetProfile(ctx, r) })))
 	m.HandleFunc("GET /api/v1/news", a.protect(a.proxy("news-service", func(ctx context.Context, r *rpc.Request) (*rpc.Response, error) { return a.News.ListArticles(ctx, r) })))
@@ -51,6 +58,7 @@ func (a *API) Handler() *http.ServeMux {
 	m.HandleFunc("GET /api/v1/news/submissions/{id}", a.protect(a.proxy("news-service", func(ctx context.Context, r *rpc.Request) (*rpc.Response, error) { return a.News.GetSubmission(ctx, r) })))
 	m.HandleFunc("GET /api/v1/events", a.protect(a.proxy("event-service", func(ctx context.Context, r *rpc.Request) (*rpc.Response, error) { return a.Events.ListEvents(ctx, r) })))
 	m.HandleFunc("GET /api/v1/events/{id}", a.protect(a.proxy("event-service", func(ctx context.Context, r *rpc.Request) (*rpc.Response, error) { return a.Events.GetEvent(ctx, r) })))
+	a.pipelineRoutes(m)
 	m.HandleFunc("GET /api/v1/analytics/summary", a.protect(a.proxy("analytics-service", func(ctx context.Context, r *rpc.Request) (*rpc.Response, error) {
 		return a.Analytics.GetSummary(ctx, r)
 	})))
@@ -113,6 +121,8 @@ func (a *API) login(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(e, service.ErrRateLimited):
 			w.Header().Set("Retry-After", "60")
 			fail(w, 429, "too_many_attempts")
+		case errors.Is(e, service.ErrAccessBlocked):
+			fail(w, 403, "access_blocked")
 		default:
 			fail(w, 503, "authentication_unavailable")
 		}
@@ -127,6 +137,15 @@ func (a *API) login(w http.ResponseWriter, r *http.Request) {
 type protected func(http.ResponseWriter, *http.Request, service.Session)
 
 func (a *API) protect(next protected) http.HandlerFunc {
+	return a.protectAccount(func(w http.ResponseWriter, r *http.Request, s service.Session) {
+		if !s.User.EmailVerified || s.User.AccessStatus != "active" {
+			fail(w, 403, "membership_not_active")
+			return
+		}
+		next(w, r, s)
+	})
+}
+func (a *API) protectAccount(next protected) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		if !a.origin(w, r) {
@@ -251,10 +270,14 @@ func writeRPC(w http.ResponseWriter, code int, v *rpc.Response, e error) {
 			fail(w, 404, "not_found")
 		case codes.InvalidArgument:
 			fail(w, 400, status.Convert(e).Message())
+		case codes.FailedPrecondition:
+			fail(w, 422, status.Convert(e).Message())
 		case codes.AlreadyExists, codes.Aborted:
 			fail(w, 409, "conflict")
 		case codes.DeadlineExceeded:
 			fail(w, 504, "upstream_timeout")
+		case codes.ResourceExhausted:
+			fail(w, 429, status.Convert(e).Message())
 		default:
 			fail(w, 503, "upstream_unavailable")
 		}

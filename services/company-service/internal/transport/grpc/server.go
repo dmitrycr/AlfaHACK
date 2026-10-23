@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"time"
 
 	"alfa.local/company-service/internal/repository/postgres"
 	"alfa.local/company-service/internal/service"
@@ -19,13 +20,52 @@ import (
 
 type Server struct {
 	rpc.UnimplementedCompanyServiceServer
-	Store ProfileStore
+	Store    ProfileStore
+	Registry service.CompanyRegistry
 }
 
 type ProfileStore interface {
 	Company(context.Context, string) (model.Company, error)
 	Profile(context.Context, string) (model.Profile, error)
 	Replace(context.Context, model.Profile) error
+}
+
+func (s *Server) checkCompany(ctx context.Context, r *rpc.Request, ensure bool) (*rpc.Response, error) {
+	c := platform.Principal(ctx)
+	if !c.Service || c.Subject != "api-gateway-registration" {
+		return nil, status.Error(codes.PermissionDenied, "registration service credentials required")
+	}
+	var input model.CompanyCheckInput
+	if e := json.Unmarshal(r.Payload, &input); e != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid_input")
+	}
+	check, e := service.CheckCompany(ctx, s.Registry, input, time.Now())
+	if e != nil {
+		switch {
+		case errors.Is(e, service.ErrInvalidINN), errors.Is(e, service.ErrInvalidName):
+			return nil, status.Error(codes.InvalidArgument, e.Error())
+		case errors.Is(e, service.ErrCompanyNotFound), errors.Is(e, service.ErrNameMismatch):
+			return nil, status.Error(codes.FailedPrecondition, e.Error())
+		default:
+			return nil, status.Error(codes.Unavailable, "registry_unavailable")
+		}
+	}
+	if ensure {
+		ensurer, ok := s.Store.(interface {
+			EnsureCompany(context.Context, model.CompanyCheck, string) (model.CompanyCheck, error)
+		})
+		if !ok {
+			return nil, status.Error(codes.Unavailable, "registry_storage_unavailable")
+		}
+		check, e = ensurer.EnsureCompany(ctx, check, input.Name)
+	}
+	return response(check, e)
+}
+func (s *Server) CheckCompany(ctx context.Context, r *rpc.Request) (*rpc.Response, error) {
+	return s.checkCompany(ctx, r, false)
+}
+func (s *Server) EnsureCompany(ctx context.Context, r *rpc.Request) (*rpc.Response, error) {
+	return s.checkCompany(ctx, r, true)
 }
 
 func response(v any, e error) (*rpc.Response, error) {

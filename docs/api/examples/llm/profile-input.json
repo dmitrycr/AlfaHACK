@@ -1,0 +1,31 @@
+{
+  "company": {
+    "id": "company-test",
+    "name": "Синтетическая компания",
+    "okved": null,
+    "sector": "Металлургия",
+    "region": "Тестовый регион",
+    "products": {},
+    "ved": {}
+  },
+  "profile": {
+    "company_id": "company-test",
+    "version": 1,
+    "ruleset_version": "test-v1",
+    "channels": [],
+    "factor_exposure": {},
+    "coverage": null,
+    "built_at": "2026-10-23T10:00:00Z",
+    "synthetic": true
+  },
+  "features": [
+    {
+      "id": "company.sector",
+      "text": "Отрасль: металлургия"
+    },
+    {
+      "id": "company.region",
+      "text": "Регион: тестовый"
+    }
+  ]
+}

@@ -79,6 +79,9 @@ func HandleArticle(ctx context.Context, tx pgx.Tx, msg model.Envelope) error {
 	if _, e = tx.Exec(ctx, "INSERT INTO events.event_revisions(event_id,version,document) VALUES($1,$2,$3)", event.ID, event.Version, b); e != nil {
 		return e
 	}
+	if e = EnqueueTag(ctx, tx, event); e != nil {
+		return e
+	}
 	return bus.Enqueue(ctx, tx, "events", bus.Events, bus.Envelope("event.prepared", event.ID, event.Scope, msg.CorrelationID, event.Version, map[string]any{"event_id": event.ID, "status": event.Status, "sources": len(event.Articles)}))
 }
 func (s Store) Get(ctx context.Context, id, company string) (model.Event, error) {

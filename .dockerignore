@@ -10,3 +10,10 @@ ml
 **/*.log
 bin
 backups
+**/.cache
+*.pem
+*.key
+*.p12
+*.pfx
+tmp
+temp

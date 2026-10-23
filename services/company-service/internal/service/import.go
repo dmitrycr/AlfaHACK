@@ -18,7 +18,7 @@ func ValidateCompany(c model.Company) error {
 	if !regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`).MatchString(c.ID) || strings.TrimSpace(c.Name) == "" || strings.TrimSpace(c.Sector) == "" || strings.TrimSpace(c.Region) == "" {
 		return errors.New("invalid company identity")
 	}
-	if !regexp.MustCompile(`^[A-U]$`).MatchString(c.OKVED.Section) || !regexp.MustCompile(`^[0-9]{2}$`).MatchString(c.OKVED.Class) || !regexp.MustCompile(`^[0-9]{2}(\.[0-9]{2})?$`).MatchString(c.OKVED.Group) || !strings.HasPrefix(c.OKVED.Group, c.OKVED.Class) {
+	if c.OKVED == nil || !regexp.MustCompile(`^[A-U]$`).MatchString(c.OKVED.Section) || !regexp.MustCompile(`^[0-9]{2}$`).MatchString(c.OKVED.Class) || !regexp.MustCompile(`^[0-9]{2}(\.[0-9]{2})?$`).MatchString(c.OKVED.Group) || !strings.HasPrefix(c.OKVED.Group, c.OKVED.Class) {
 		return errors.New("invalid normalized OKVED")
 	}
 	if c.RevenueMinor != nil && *c.RevenueMinor < 0 {
@@ -79,7 +79,7 @@ func ReadImport(companies io.Reader, profiles io.Reader) ([]model.Company, []mod
 			}
 			return ""
 		}
-		c := model.Company{ID: get("id"), Name: get("name"), OKVED: model.OKVED{Section: get("okved_section"), Class: get("okved_class"), Group: get("okved_group")}, Sector: get("sector"), Region: get("region"), Products: map[string]*bool{}, VED: map[string]any{"country": get("fts_country")}}
+		c := model.Company{ID: get("id"), Name: get("name"), OKVED: &model.OKVED{Section: get("okved_section"), Class: get("okved_class"), Group: get("okved_group")}, Sector: get("sector"), Region: get("region"), Products: map[string]*bool{}, VED: map[string]any{"country": get("fts_country")}}
 		for _, key := range []string{"rko", "guarantee", "loan", "leasing", "deposit", "zpp", "factoring", "fts_flag"} {
 			value := get(key)
 			var flag *bool

@@ -16,7 +16,7 @@ import (
 
 func setup(t *testing.T) Store {
 	p := testdb.Open(t, "events")
-	if e := platform.Migrate(context.Background(), p, "events", migrations.SQL+bus.Tables("events")); e != nil {
+	if e := migrations.Apply(context.Background(), p); e != nil {
 		t.Fatal(e)
 	}
 	return Store{p}

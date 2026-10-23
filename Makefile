@@ -1,9 +1,14 @@
 SHELL := /bin/sh
 PYTHON ?= python3
-MODULES := ./contracts/... ./libs/go/... ./services/api-gateway/... ./services/company-service/... ./services/news-service/... ./services/event-service/... ./services/analytics-service/... ./services/scoring-service/...
+MODULES := ./contracts/... ./libs/go/... ./services/api-gateway/... ./services/company-service/... ./services/news-service/... ./services/event-service/... ./services/analytics-service/... ./services/ai-agent-service/... ./services/insight-service/... ./services/scoring-service/...
 COMPOSE := docker compose --env-file .env -f infrastructure/docker/compose.yaml
 
 .PHONY: setup up down collect test integration race vet fmt check e2e native-e2e logs contracts
+.PHONY: llm-config llm-soak
+llm-config:
+	go run ./services/ai-agent-service/cmd/app check-llm-config
+llm-soak:
+	LLM_SOAK_SECONDS=$${LLM_SOAK_SECONDS:-30} go test -count=1 -timeout=90s -v ./libs/go/llm -run '^TestHTTPSoak$$'
 setup:
 	./scripts/setup.sh
 up:

@@ -1,0 +1,23 @@
+syntax = "proto3";
+package alfa.v1;
+option go_package = "alfa.local/shared/rpc";
+import "v1/backend.proto";
+// All JSON payloads are versioned by contracts/events/llm.schema.json.
+service AIService {
+ rpc GetWorkflow(Request) returns (Response);
+ rpc QueueProfile(Request) returns (Response);
+ rpc GetProfileJob(Request) returns (Response);
+ rpc Run(Request) returns (Response);
+ rpc GetTrace(Request) returns (Response);
+ rpc CreateThread(Request) returns (Response);
+ rpc GetThread(Request) returns (Response);
+ rpc SendMessage(Request) returns (Response);
+ rpc GetMessage(Request) returns (Response);
+}
+service InsightService {
+ rpc SubmitMatch(Request) returns (Response);
+ rpc CreateInsight(Request) returns (Response);
+ rpc GetInsight(Request) returns (Response);
+ rpc ListInsights(Request) returns (Response);
+ rpc GetInsightContext(Request) returns (Response);
+}

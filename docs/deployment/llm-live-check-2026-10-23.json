@@ -1,0 +1,292 @@
+{
+  "date": "2026-10-23",
+  "generation_requests_attempted": 12,
+  "recorded_request_outcomes": 11,
+  "unrecorded_outcome": "Compact Qwen response caused diagnostic harness TypeError on nullable content; no automatic retry and no pass claim.",
+  "budget_start": {
+    "max_budget": 500,
+    "spend": 2.122475845284601
+  },
+  "budget_end": {
+    "status": 200,
+    "max_budget": 500.0,
+    "spend": 3.021880880641351,
+    "remaining_computed": 496.97811911935867,
+    "reset_at": "2026-10-24T00:00:00+00:00"
+  },
+  "scope": "Direct official gateway probes using project prompts, generated output schemas and Go runtime validators on synthetic inputs; not successful backend HTTP-mode E2E.",
+  "results": [
+    {
+      "test": "glm_smoke_max_tokens",
+      "model_requested": "z-ai/glm-5.3-flash",
+      "http_status": 200,
+      "seconds": 2.756,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 38,
+        "prompt_tokens": 35,
+        "total_tokens": 73,
+        "completion_tokens_details": {
+          "reasoning_tokens": 32
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "cost": 0.00281322952625
+      },
+      "json_valid": true
+    },
+    {
+      "test": "contract_tag",
+      "model_requested": "z-ai/glm-5.3-flash",
+      "model_returned": "z-ai/glm-5.3-flash",
+      "http_status": 200,
+      "seconds": 20.037,
+      "uncertain": false,
+      "error_type": null,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 1685,
+        "prompt_tokens": 945,
+        "total_tokens": 2630,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1400
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "cost": 0.11418231592625
+      },
+      "json_valid": true,
+      "validation": {
+        "input_valid": true,
+        "output_valid": false
+      }
+    },
+    {
+      "test": "contract_profile",
+      "model_requested": "deepseek/deepseek-v4.1-flash",
+      "model_returned": "deepseek/deepseek-v4.1-flash",
+      "http_status": 200,
+      "seconds": 8.067,
+      "uncertain": false,
+      "error_type": null,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 1005,
+        "prompt_tokens": 576,
+        "total_tokens": 1581,
+        "completion_tokens_details": {
+          "reasoning_tokens": 697
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "cost": 0.079976925171
+      },
+      "json_valid": true,
+      "validation": {
+        "input_valid": true,
+        "output_valid": true
+      }
+    },
+    {
+      "test": "contract_insight",
+      "model_requested": "qwen/qwen3.6-35b-a3b",
+      "model_returned": null,
+      "http_status": null,
+      "seconds": 30.337,
+      "uncertain": true,
+      "error_type": "timeout",
+      "finish_reason": null,
+      "usage": null,
+      "json_valid": false,
+      "validation": {
+        "output_valid": false
+      }
+    },
+    {
+      "test": "contract_check",
+      "model_requested": "google/gemma-4-26b-a4b-it",
+      "model_returned": "google/gemma-4-26b-a4b-it",
+      "http_status": 200,
+      "seconds": 1.549,
+      "uncertain": false,
+      "error_type": null,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 37,
+        "prompt_tokens": 1119,
+        "total_tokens": 1156,
+        "completion_tokens_details": {
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "video_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_creation_tokens": 0
+        },
+        "cost": 0.0091974413115
+      },
+      "json_valid": false,
+      "validation": {
+        "output_valid": false
+      }
+    },
+    {
+      "test": "contract_chat",
+      "model_requested": "z-ai/glm-5.3-flash",
+      "model_returned": "z-ai/glm-5.3-flash",
+      "http_status": 200,
+      "seconds": 12.685,
+      "uncertain": false,
+      "error_type": null,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 821,
+        "prompt_tokens": 1410,
+        "total_tokens": 2231,
+        "completion_tokens_details": {
+          "reasoning_tokens": 533
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "cost": 0.07215788723000001
+      },
+      "json_valid": true,
+      "validation": {
+        "input_valid": true,
+        "output_valid": true
+      }
+    },
+    {
+      "test": "chat_missing_facts",
+      "model_requested": "z-ai/glm-5.3-flash",
+      "model_returned": "z-ai/glm-5.3-flash",
+      "http_status": 200,
+      "seconds": 12.635,
+      "uncertain": false,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 831,
+        "prompt_tokens": 1441,
+        "total_tokens": 2272,
+        "completion_tokens_details": {
+          "reasoning_tokens": 556
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "cost": 0.07327737856725001
+      },
+      "json_valid": true,
+      "validation": {
+        "input_valid": true,
+        "output_valid": true
+      },
+      "content_length": 1131
+    },
+    {
+      "test": "check_false_claim",
+      "model_requested": "google/gemma-4-26b-a4b-it",
+      "model_returned": "google/gemma-4-26b-a4b-it",
+      "http_status": 200,
+      "seconds": 1.583,
+      "uncertain": false,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 157,
+        "prompt_tokens": 1146,
+        "total_tokens": 1303,
+        "completion_tokens_details": {
+          "audio_tokens": 0,
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "video_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_creation_tokens": 0
+        },
+        "cost": 0.012434105385
+      },
+      "json_valid": false,
+      "validation": {
+        "output_valid": false
+      },
+      "content_length": 543
+    },
+    {
+      "test": "tag_prompt_injection",
+      "model_requested": "z-ai/glm-5.3-flash",
+      "model_returned": "z-ai/glm-5.3-flash",
+      "http_status": 200,
+      "seconds": 22.785,
+      "uncertain": false,
+      "finish_reason": "length",
+      "usage": {
+        "completion_tokens": 2000,
+        "prompt_tokens": 960,
+        "total_tokens": 2960,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1861
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "cost": 0.13271482796
+      },
+      "json_valid": false,
+      "validation": {
+        "output_valid": false
+      },
+      "content_length": 553
+    },
+    {
+      "test": "fallback_glm",
+      "model_requested": "z-ai/glm-5.3-flash",
+      "model_returned": "z-ai/glm-5.3-flash",
+      "http_status": 200,
+      "seconds": 3.356,
+      "uncertain": false,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 69,
+        "prompt_tokens": 42,
+        "total_tokens": 111,
+        "completion_tokens_details": {
+          "reasoning_tokens": 55
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "cost": 0.004733186172
+      }
+    },
+    {
+      "test": "kimi_smoke",
+      "model_requested": "moonshotai/kimi-k2.6",
+      "model_returned": "moonshotai/kimi-k2.6",
+      "http_status": 200,
+      "seconds": 3.059,
+      "uncertain": false,
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 165,
+        "prompt_tokens": 41,
+        "total_tokens": 206,
+        "completion_tokens_details": {
+          "reasoning_tokens": 151
+        },
+        "cost": 0.0737134686925
+      }
+    }
+  ]
+}

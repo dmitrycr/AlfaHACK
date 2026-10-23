@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Alfa Insight Backend",
-    "version": "0.1.0",
-    "description": "Fixture-only backend iteration. Business roles and live ML are not enabled."
+    "version": "0.2.0",
+    "description": "Fixture-only backend with employee registration, mock company checks and operator-approved membership. Business roles and live ML are not enabled."
   },
   "servers": [
     {
@@ -460,6 +460,691 @@
         },
         "parameters": []
       }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "registerEmployee",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResult"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: 400 invalid input; 409 email/key conflict; 422 registry miss/mismatch; 429 rate limit; 503 unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          }
+        ]
+      }
+    },
+    "/auth/company-check": {
+      "post": {
+        "operationId": "checkCompany",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyCheckInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyCheck"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: 400 invalid input; 409 email/key conflict; 422 registry miss/mismatch; 429 rate limit; 503 unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "operationId": "verifyEmail",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: 400 invalid input; 409 email/key conflict; 422 registry miss/mismatch; 429 rate limit; 503 unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/resend-verification": {
+      "post": {
+        "operationId": "resendVerification",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendVerificationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResendVerificationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error: 400 invalid input; 409 email/key conflict; 422 registry miss/mismatch; 429 rate limit; 503 unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/prepared": {
+      "get": {
+        "operationId": "get_events_prepared",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMPreparedPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{id}/prepared": {
+      "get": {
+        "operationId": "get_events_id_prepared",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMPrepared"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/insights": {
+      "post": {
+        "operationId": "post_insights",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{8,128}$"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMJob"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInsightInput"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "get_insights",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMInsightPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/insights/{id}": {
+      "get": {
+        "operationId": "get_insights_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMJob"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/threads": {
+      "post": {
+        "operationId": "post_chat_threads",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{8,128}$"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMThread"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateThreadInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/threads/{id}": {
+      "get": {
+        "operationId": "get_chat_threads_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMThread"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/threads/{id}/messages": {
+      "post": {
+        "operationId": "post_chat_threads_id_messages",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{8,128}$"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMJob"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/messages/{id}": {
+      "get": {
+        "operationId": "get_chat_messages_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMJob"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/runs/{id}": {
+      "get": {
+        "operationId": "get_ai_runs_id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMTrace"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/workflows/{id}": {
+      "get": {
+        "operationId": "get_ai_workflow",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMWorkflowTrace"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -503,7 +1188,14 @@
             "type": "string"
           },
           "okved": {
-            "$ref": "#/components/schemas/OKVED"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OKVED"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "sector": {
             "type": "string"
@@ -526,6 +1218,10 @@
           },
           "ved": {
             "type": "object"
+          },
+          "inn": {
+            "type": "string",
+            "pattern": "^[0-9]{10}$"
           }
         },
         "required": [
@@ -894,7 +1590,10 @@
           "status": {
             "enum": [
               "awaiting_tagging",
-              "tagged"
+              "tagged",
+              "noise",
+              "insufficient_data",
+              "tagging_failed"
             ]
           },
           "articles": {
@@ -1056,12 +1755,33 @@
           },
           "company_id": {
             "type": "string"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "job_title": {
+            "type": "string"
+          },
+          "email_verified": {
+            "type": "boolean"
+          },
+          "access_status": {
+            "enum": [
+              "pending_email",
+              "pending_approval",
+              "active",
+              "blocked"
+            ]
           }
         },
         "required": [
           "id",
           "email",
-          "company_id"
+          "company_id",
+          "full_name",
+          "job_title",
+          "email_verified",
+          "access_status"
         ],
         "additionalProperties": false
       },
@@ -1616,6 +2336,1736 @@
         ],
         "additionalProperties": false
       },
+      "CompanyCheckInput": {
+        "type": "object",
+        "properties": {
+          "inn": {
+            "type": "string",
+            "pattern": "^[0-9]{10}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "inn",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "CompanyCheck": {
+        "type": "object",
+        "properties": {
+          "company_id": {
+            "type": "string"
+          },
+          "inn": {
+            "type": "string",
+            "pattern": "^[0-9]{10}$"
+          },
+          "canonical_name": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "matched_mock"
+            ]
+          },
+          "provider": {
+            "const": "mock-registry-v1"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "company_id",
+          "inn",
+          "canonical_name",
+          "status",
+          "provider",
+          "checked_at"
+        ],
+        "additionalProperties": false
+      },
+      "RegistrationInput": {
+        "type": "object",
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 300
+          },
+          "job_title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 300
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 72,
+            "description": "12–72 UTF-8 bytes; bcrypt limit is in bytes"
+          },
+          "company_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 300
+          },
+          "inn": {
+            "type": "string",
+            "pattern": "^[0-9]{10}$"
+          }
+        },
+        "required": [
+          "full_name",
+          "job_title",
+          "email",
+          "password",
+          "company_name",
+          "inn"
+        ],
+        "additionalProperties": false
+      },
+      "RegistrationResult": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "company_check": {
+            "$ref": "#/components/schemas/CompanyCheck"
+          },
+          "email_delivery": {
+            "const": "mock"
+          }
+        },
+        "required": [
+          "user",
+          "company_check",
+          "email_delivery"
+        ],
+        "additionalProperties": false
+      },
+      "VerifyEmailInput": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 64,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "additionalProperties": false
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "user"
+        ],
+        "additionalProperties": false
+      },
+      "ResendVerificationInput": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "additionalProperties": false
+      },
+      "ResendVerificationResult": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "const": "accepted"
+          },
+          "email_delivery": {
+            "const": "mock"
+          }
+        },
+        "required": [
+          "status",
+          "email_delivery"
+        ],
+        "additionalProperties": false
+      },
+      "LLMAnswer": {
+        "additionalProperties": false,
+        "properties": {
+          "insufficient_data": {
+            "type": "boolean"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "sources",
+          "insufficient_data",
+          "limitations"
+        ],
+        "type": "object"
+      },
+      "LLMBankExcerpt": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/LLMSource"
+          },
+          "synthetic": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "text",
+          "synthetic"
+        ],
+        "type": "object"
+      },
+      "LLMBlocks": {
+        "additionalProperties": false,
+        "properties": {
+          "actions": {
+            "type": "string"
+          },
+          "bank_view": {
+            "type": "string"
+          },
+          "basis": {
+            "type": "string"
+          },
+          "consequences": {
+            "type": "string"
+          },
+          "what": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "what",
+          "why",
+          "consequences",
+          "actions",
+          "bank_view",
+          "basis"
+        ],
+        "type": "object"
+      },
+      "LLMCall": {
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "properties": {
+              "input": {
+                "$ref": "#/components/schemas/LLMTagInput"
+              },
+              "task": {
+                "const": "tag"
+              }
+            }
+          },
+          {
+            "properties": {
+              "input": {
+                "$ref": "#/components/schemas/LLMProfileInput"
+              },
+              "task": {
+                "const": "profile"
+              }
+            }
+          },
+          {
+            "properties": {
+              "input": {
+                "$ref": "#/components/schemas/LLMInsightInput"
+              },
+              "task": {
+                "const": "insight"
+              }
+            }
+          },
+          {
+            "properties": {
+              "input": {
+                "$ref": "#/components/schemas/LLMInsightInput"
+              },
+              "task": {
+                "const": "final"
+              }
+            }
+          },
+          {
+            "properties": {
+              "input": {
+                "$ref": "#/components/schemas/LLMCheckInput"
+              },
+              "task": {
+                "const": "check"
+              }
+            }
+          },
+          {
+            "properties": {
+              "input": {
+                "$ref": "#/components/schemas/LLMChatInput"
+              },
+              "task": {
+                "const": "chat"
+              }
+            }
+          }
+        ],
+        "properties": {
+          "input": {},
+          "scope": {
+            "type": "string"
+          },
+          "task": {
+            "enum": [
+              "tag",
+              "profile",
+              "insight",
+              "final",
+              "check",
+              "chat"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "task",
+          "scope",
+          "input"
+        ],
+        "type": "object"
+      },
+      "LLMCard": {
+        "additionalProperties": false,
+        "properties": {
+          "blocks": {
+            "$ref": "#/components/schemas/LLMBlocks"
+          },
+          "confidence": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "statements": {
+            "items": {
+              "$ref": "#/components/schemas/LLMStatement"
+            },
+            "type": "array"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "blocks",
+          "statements",
+          "confidence",
+          "limitations"
+        ],
+        "type": "object"
+      },
+      "LLMChannel": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sector": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "weight",
+          "source",
+          "evidence"
+        ],
+        "type": "object"
+      },
+      "LLMChatInput": {
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "$ref": "#/components/schemas/LLMInsightInput"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/LLMMessage"
+            },
+            "type": "array"
+          },
+          "insight": {
+            "$ref": "#/components/schemas/LLMInsight"
+          },
+          "question": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "context",
+          "insight",
+          "history",
+          "question"
+        ],
+        "type": "object"
+      },
+      "LLMCheckInput": {
+        "additionalProperties": false,
+        "properties": {
+          "card": {
+            "$ref": "#/components/schemas/LLMCard"
+          },
+          "context": {
+            "$ref": "#/components/schemas/LLMInsightInput"
+          }
+        },
+        "required": [
+          "context",
+          "card"
+        ],
+        "type": "object"
+      },
+      "LLMCheckResult": {
+        "additionalProperties": false,
+        "properties": {
+          "passed": {
+            "type": "boolean"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "passed",
+          "reasons"
+        ],
+        "type": "object"
+      },
+      "LLMCompany": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "inn": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "okved": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMOKVED"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "products": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          "region": {
+            "type": "string"
+          },
+          "revenue_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sector": {
+            "type": "string"
+          },
+          "ved": {
+            "additionalProperties": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "okved",
+          "sector",
+          "region",
+          "products",
+          "ved"
+        ],
+        "type": "object"
+      },
+      "LLMCompletion": {
+        "additionalProperties": false,
+        "properties": {
+          "business_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMProfileBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cached": {
+            "type": "boolean"
+          },
+          "check": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMCheckResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "check_run_id": {
+            "type": "string"
+          },
+          "output": {},
+          "profile_run_id": {
+            "type": "string"
+          },
+          "prompt_version": {
+            "type": "string"
+          },
+          "provider_version": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "synthetic": {
+            "type": "boolean"
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "output",
+          "cached",
+          "prompt_version",
+          "provider_version",
+          "synthetic",
+          "workflow_id"
+        ],
+        "type": "object"
+      },
+      "LLMContribution": {
+        "additionalProperties": false,
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "contribution": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "match": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "weight": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "channel",
+          "weight",
+          "match",
+          "contribution"
+        ],
+        "type": "object"
+      },
+      "LLMFeature": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "type": "object"
+      },
+      "LLMInsight": {
+        "additionalProperties": false,
+        "properties": {
+          "business_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMProfileBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "card": {
+            "$ref": "#/components/schemas/LLMCard"
+          },
+          "check": {
+            "$ref": "#/components/schemas/LLMCheckResult"
+          },
+          "check_run_id": {
+            "type": "string"
+          },
+          "company_id": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "event_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "profile_features": {
+            "items": {
+              "$ref": "#/components/schemas/LLMFeature"
+            },
+            "type": "array"
+          },
+          "profile_run_id": {
+            "type": "string"
+          },
+          "profile_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "ruleset_version": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/LLMSource"
+            },
+            "type": "array"
+          },
+          "synthetic": {
+            "type": "boolean"
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "company_id",
+          "event_id",
+          "event_version",
+          "profile_version",
+          "ruleset_version",
+          "run_id",
+          "check_run_id",
+          "sources",
+          "profile_features",
+          "workflow_id",
+          "profile_run_id",
+          "synthetic",
+          "card",
+          "check"
+        ],
+        "type": "object"
+      },
+      "LLMInsightInput": {
+        "additionalProperties": false,
+        "properties": {
+          "bank": {
+            "items": {
+              "$ref": "#/components/schemas/LLMBankExcerpt"
+            },
+            "type": "array"
+          },
+          "business_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMProfileBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "company": {
+            "$ref": "#/components/schemas/LLMCompany"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/LLMFeature"
+            },
+            "type": "array"
+          },
+          "match": {
+            "$ref": "#/components/schemas/LLMMatch"
+          },
+          "prepared": {
+            "$ref": "#/components/schemas/LLMPrepared"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/LLMProfile"
+          }
+        },
+        "required": [
+          "company",
+          "profile",
+          "prepared",
+          "match",
+          "features",
+          "bank"
+        ],
+        "type": "object"
+      },
+      "LLMMatch": {
+        "additionalProperties": false,
+        "properties": {
+          "breakdown": {
+            "items": {
+              "$ref": "#/components/schemas/LLMContribution"
+            },
+            "type": "array"
+          },
+          "company_id": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "event_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "profile_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "ruleset_version": {
+            "type": "string"
+          },
+          "score": {
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "synthetic": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "company_id",
+          "event_id",
+          "profile_version",
+          "event_version",
+          "ruleset_version",
+          "score",
+          "breakdown",
+          "synthetic"
+        ],
+        "type": "object"
+      },
+      "LLMMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "text"
+        ],
+        "type": "object"
+      },
+      "LLMOKVED": {
+        "additionalProperties": false,
+        "properties": {
+          "class": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "section",
+          "class",
+          "group"
+        ],
+        "type": "object"
+      },
+      "LLMPrepared": {
+        "additionalProperties": false,
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/LLMReadyEvent"
+          },
+          "event_version": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "input_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "prompt_version": {
+            "type": "string"
+          },
+          "provider_version": {
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "backend-llm-v1",
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "synthetic": {
+            "type": "boolean"
+          },
+          "vocabulary_version": {
+            "const": "ml-stage1-v1",
+            "type": "string"
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflow_id",
+          "schema_version",
+          "event_version",
+          "input_revision",
+          "scope",
+          "prompt_version",
+          "vocabulary_version",
+          "provider_version",
+          "synthetic",
+          "event"
+        ],
+        "type": "object"
+      },
+      "LLMProfile": {
+        "additionalProperties": false,
+        "properties": {
+          "built_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/LLMChannel"
+            },
+            "type": "array"
+          },
+          "company_id": {
+            "type": "string"
+          },
+          "coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "factor_exposure": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          "features": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMProfileFeatures"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ruleset_version": {
+            "type": "string"
+          },
+          "synthetic": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "company_id",
+          "version",
+          "ruleset_version",
+          "channels",
+          "factor_exposure",
+          "coverage",
+          "built_at",
+          "synthetic"
+        ],
+        "type": "object"
+      },
+      "LLMReadyEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "collected_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "companies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "direction": {
+            "enum": [
+              "positive",
+              "negative",
+              "unclear"
+            ],
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "factors": {
+            "items": {
+              "enum": [
+                "ставка",
+                "инфляция",
+                "USD",
+                "CNY",
+                "EUR",
+                "нефть",
+                "газ",
+                "сталь",
+                "уголь",
+                "удобрения",
+                "зерно",
+                "золото",
+                "тарифы",
+                "налоги",
+                "санкции",
+                "пошлины"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "horizon": {
+            "enum": [
+              "short",
+              "medium",
+              "long"
+            ],
+            "type": "string"
+          },
+          "importance": {
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "okved": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "regions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "sectors": {
+            "items": {
+              "enum": [
+                "Нефть и газ",
+                "Металлургия и добыча",
+                "Энергетика",
+                "Строительство",
+                "Недвижимость",
+                "Оптовая торговля",
+                "Розничная торговля",
+                "Автомобили",
+                "Транспорт и логистика",
+                "ИТ и телеком",
+                "Финансы",
+                "Агро и пищевая промышленность",
+                "Химия и удобрения",
+                "Машиностроение и промышленность",
+                "Услуги и прочее",
+                "Здравоохранение и социальная сфера"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/LLMSource"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "regulation",
+              "macro",
+              "commodity",
+              "corporate",
+              "industry",
+              "regional",
+              "sanctions"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "title",
+          "summary",
+          "sources",
+          "type",
+          "sectors",
+          "okved",
+          "companies",
+          "regions",
+          "factors",
+          "direction",
+          "horizon",
+          "importance",
+          "collected_at"
+        ],
+        "type": "object"
+      },
+      "LLMSource": {
+        "additionalProperties": false,
+        "properties": {
+          "fragment_id": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "news",
+              "bank_analytics"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "published_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "url": {
+            "format": "uri",
+            "maxLength": 2048,
+            "pattern": "^https?://",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "name",
+          "published_at",
+          "kind"
+        ],
+        "type": "object"
+      },
+      "LLMStatement": {
+        "additionalProperties": false,
+        "properties": {
+          "layer": {
+            "enum": [
+              "fact",
+              "bank",
+              "ai"
+            ],
+            "type": "string"
+          },
+          "profile_features": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "layer",
+          "sources",
+          "profile_features"
+        ],
+        "type": "object"
+      },
+      "LLMTagInput": {
+        "additionalProperties": false,
+        "properties": {
+          "collected_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "event_id": {
+            "type": "string"
+          },
+          "input_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/LLMSource"
+            },
+            "type": "array"
+          },
+          "text": {
+            "maxLength": 20000,
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 500,
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "input_revision",
+          "title",
+          "text",
+          "sources",
+          "collected_at"
+        ],
+        "type": "object"
+      },
+      "LLMTagResult": {
+        "additionalProperties": false,
+        "properties": {
+          "event": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMReadyEvent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "noise",
+              "insufficient_data"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "reason",
+          "event"
+        ],
+        "type": "object"
+      },
+      "LLMTrace": {
+        "additionalProperties": false,
+        "properties": {
+          "cost_estimated": {
+            "type": "boolean"
+          },
+          "cost_minor": {
+            "type": "integer"
+          },
+          "cost_nano_rub": {
+            "type": "integer"
+          },
+          "duration_ms": {
+            "type": "integer"
+          },
+          "error_code": {
+            "type": "string"
+          },
+          "input_hash": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "prompt_version": {
+            "type": "string"
+          },
+          "reasoning_tokens": {
+            "type": "integer"
+          },
+          "reserved_nano_rub": {
+            "type": "integer"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "synthetic": {
+            "type": "boolean"
+          },
+          "task": {
+            "type": "string"
+          },
+          "tokens_in": {
+            "type": "integer"
+          },
+          "tokens_out": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "task",
+          "status",
+          "model",
+          "prompt_version",
+          "input_hash",
+          "tokens_in",
+          "tokens_out",
+          "cost_minor",
+          "cost_nano_rub",
+          "reserved_nano_rub",
+          "cost_estimated",
+          "reasoning_tokens",
+          "synthetic",
+          "duration_ms",
+          "error_code"
+        ],
+        "type": "object"
+      },
+      "LLMTurn": {
+        "type": "object",
+        "properties": {
+          "thread_id": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "$ref": "#/components/schemas/LLMAnswer"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "synthetic": {
+            "type": "boolean"
+          },
+          "workflow_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "thread_id",
+          "question",
+          "answer",
+          "run_id",
+          "synthetic",
+          "workflow_id"
+        ],
+        "additionalProperties": false
+      },
+      "LLMJob": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "tag",
+              "insight",
+              "chat",
+              "profile"
+            ]
+          },
+          "company_id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "running",
+              "retry",
+              "ready",
+              "failed",
+              "obsolete",
+              "uncertain"
+            ]
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "result": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LLMInsight"
+              },
+              {
+                "$ref": "#/components/schemas/LLMTurn"
+              },
+              {
+                "$ref": "#/components/schemas/LLMCompletion"
+              }
+            ]
+          },
+          "error_code": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "company_id",
+          "status",
+          "attempts",
+          "result",
+          "error_code",
+          "created_at",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "LLMThread": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "company_id": {
+            "type": "string"
+          },
+          "insight_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LLMJob"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "company_id",
+          "insight_id",
+          "created_at",
+          "messages"
+        ],
+        "additionalProperties": false
+      },
+      "CreateInsightInput": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "event_id"
+        ],
+        "additionalProperties": false
+      },
+      "CreateThreadInput": {
+        "type": "object",
+        "properties": {
+          "insight_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "insight_id"
+        ],
+        "additionalProperties": false
+      },
+      "SendMessageInput": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "LLMPreparedPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LLMPrepared"
+            }
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "additionalProperties": false
+      },
+      "LLMInsightPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LLMJob"
+            }
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "additionalProperties": false
+      },
+      "LLMProfileBrief": {
+        "additionalProperties": false,
+        "properties": {
+          "company_id": {
+            "type": "string"
+          },
+          "hypotheses": {
+            "items": {
+              "$ref": "#/components/schemas/LLMProfileObservation"
+            },
+            "type": "array"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "observations": {
+            "items": {
+              "$ref": "#/components/schemas/LLMProfileObservation"
+            },
+            "type": "array"
+          },
+          "profile_version": {
+            "type": "integer"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "company_id",
+          "profile_version",
+          "summary",
+          "observations",
+          "hypotheses",
+          "limitations"
+        ],
+        "type": "object"
+      },
+      "LLMProfileInput": {
+        "additionalProperties": false,
+        "properties": {
+          "company": {
+            "$ref": "#/components/schemas/LLMCompany"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/LLMFeature"
+            },
+            "type": "array"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/LLMProfile"
+          }
+        },
+        "required": [
+          "company",
+          "profile",
+          "features"
+        ],
+        "type": "object"
+      },
+      "LLMProfileObservation": {
+        "additionalProperties": false,
+        "properties": {
+          "feature_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "feature_ids"
+        ],
+        "type": "object"
+      },
+      "LLMWorkflowStep": {
+        "additionalProperties": false,
+        "properties": {
+          "error_code": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "model",
+          "name",
+          "status",
+          "run_id",
+          "error_code"
+        ],
+        "type": "object"
+      },
+      "LLMWorkflowTrace": {
+        "additionalProperties": false,
+        "properties": {
+          "attempts": {
+            "type": "integer"
+          },
+          "entity_id": {
+            "type": "string"
+          },
+          "error_code": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/LLMWorkflowStep"
+            },
+            "type": "array"
+          },
+          "task": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_id",
+          "id",
+          "task",
+          "status",
+          "attempts",
+          "error_code",
+          "steps"
+        ],
+        "type": "object"
+      },
       "ProfileFeatures": {
         "type": "object",
         "additionalProperties": false,
@@ -1712,6 +4162,126 @@
             "maximum": 1
           }
         }
+      },
+      "LLMConcentration": {
+        "additionalProperties": false,
+        "properties": {
+          "hhi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "top1_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "top5_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "top1_share",
+          "top5_share",
+          "hhi"
+        ],
+        "type": "object"
+      },
+      "LLMProfileFeatures": {
+        "additionalProperties": false,
+        "properties": {
+          "buyers": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMSideFeatures"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "suppliers": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMSideFeatures"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "buyers",
+          "suppliers"
+        ],
+        "type": "object"
+      },
+      "LLMSectorShare": {
+        "additionalProperties": false,
+        "properties": {
+          "sector": {
+            "type": "string"
+          },
+          "share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "sector",
+          "share"
+        ],
+        "type": "object"
+      },
+      "LLMSideFeatures": {
+        "additionalProperties": false,
+        "properties": {
+          "concentration": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LLMConcentration"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sector_shares": {
+            "items": {
+              "$ref": "#/components/schemas/LLMSectorShare"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "sector_shares",
+          "concentration"
+        ],
+        "type": "object"
       }
     }
   }

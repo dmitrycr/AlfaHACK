@@ -205,7 +205,7 @@ func (c Config) match(ch model.Channel, r Request, e Event, expand bool) (float6
 	switch ch.Name {
 	case "industry", "competitor":
 		value, reason := c.sectorMatch(r.Company.Sector, e.Tags.Sectors, expand)
-		if contains(e.Tags.OKVEDClasses, r.Company.OKVED.Class) {
+		if r.Company.OKVED != nil && contains(e.Tags.OKVEDClasses, r.Company.OKVED.Class) {
 			return 1, "okved_class_exact"
 		}
 		return value, reason
@@ -227,7 +227,7 @@ func (c Config) match(ch model.Channel, r Request, e Event, expand bool) (float6
 	case "regulatory":
 		if contains([]string{"регулирование", "санкции", "regulation", "sanctions"}, e.Tags.Type) {
 			value, reason := c.sectorMatch(r.Company.Sector, e.Tags.Sectors, expand)
-			if contains(e.Tags.OKVEDClasses, r.Company.OKVED.Class) {
+			if r.Company.OKVED != nil && contains(e.Tags.OKVEDClasses, r.Company.OKVED.Class) {
 				return 1, "regulatory_okved"
 			}
 			return value, reason

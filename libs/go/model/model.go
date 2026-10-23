@@ -15,12 +15,27 @@ type OKVED struct {
 type Company struct {
 	ID           string           `json:"id"`
 	Name         string           `json:"name"`
-	OKVED        OKVED            `json:"okved"`
+	INN          string           `json:"inn,omitempty"`
+	OKVED        *OKVED           `json:"okved"`
 	Sector       string           `json:"sector"`
 	Region       string           `json:"region"`
 	RevenueMinor *int64           `json:"revenue_minor,omitempty"`
 	Products     map[string]*bool `json:"products"`
 	VED          map[string]any   `json:"ved"`
+}
+
+type CompanyCheckInput struct {
+	INN  string `json:"inn"`
+	Name string `json:"name"`
+}
+
+type CompanyCheck struct {
+	CompanyID     string    `json:"company_id"`
+	INN           string    `json:"inn"`
+	CanonicalName string    `json:"canonical_name"`
+	Status        string    `json:"status"`
+	Provider      string    `json:"provider"`
+	CheckedAt     time.Time `json:"checked_at"`
 }
 type Channel struct {
 	Name     string   `json:"name"`
