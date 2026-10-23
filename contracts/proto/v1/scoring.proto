@@ -1,0 +1,9 @@
+syntax = "proto3";
+package alfa.v1;
+option go_package = "alfa.local/shared/rpc";
+import "v1/backend.proto";
+
+// Internal service-only API. JSON bodies follow contracts/events/scoring.schema.json.
+service ScoringService {
+  rpc RankEvents(Request) returns (Response);
+}

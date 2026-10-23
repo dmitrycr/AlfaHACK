@@ -1,0 +1,9 @@
+{
+  "company": {"id":"company-metal","name":"Synthetic steel company","okved":{"section":"C","class":"24","group":"24.10"},"sector":"Металлургия","region":"Москва","products":{},"ved":{}},
+  "profile": {"company_id":"company-metal","version":1,"ruleset_version":"synthetic-v1","channels":[{"name":"demand","sector":"Строительство","weight":0.7,"source":"matrix","evidence":["synthetic:construction_buys_steel"]}],"factor_exposure":{},"coverage":null,"built_at":"2026-10-21T00:00:00Z","synthetic":true},
+  "as_of":"2026-10-23T00:00:00Z",
+  "events":[
+    {"id":"synthetic-construction","version":1,"scope":"public","published_at":"2026-10-22T12:00:00Z","tags":{"type":"sector","sectors":["Строительство"],"okved_classes":[],"factors":[],"importance":4,"input_revision":1,"provider_version":"synthetic-v1"}},
+    {"id":"synthetic-unrelated","version":1,"scope":"public","published_at":"2026-10-22T12:00:00Z","tags":{"type":"sector","sectors":["Туризм"],"okved_classes":[],"factors":[],"importance":5,"input_revision":1,"provider_version":"synthetic-v1"}}
+  ]
+}

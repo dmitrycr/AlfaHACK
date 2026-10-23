@@ -19,6 +19,14 @@ features_example = json.loads((ROOT / "docs/api/examples/profile-features.json")
 Draft202012Validator(profile_schema, format_checker=FormatChecker()).validate(features_example)
 api = json.loads((ROOT / "contracts/openapi/backend.yaml").read_text())
 
+scoring_schema = json.loads((ROOT / "contracts/events/scoring.schema.json").read_text(encoding="utf-8"))
+Draft202012Validator.check_schema(scoring_schema)
+for definition in schema["$defs"]:
+    assert scoring_schema["$defs"][definition] == schema["$defs"][definition], "Shared scoring definitions drifted"
+for name, definition in (("scoring-request.json", "RankingRequest"), ("scoring-result.json", "RankingResult")):
+    example = json.loads((ROOT / "docs/api/examples" / name).read_text(encoding="utf-8"))
+    Draft202012Validator(dict(scoring_schema, **{"$ref": "#/$defs/" + definition}), format_checker=FormatChecker()).validate(example)
+
 def check_refs(node):
     if isinstance(node, dict):
         if "$ref" in node:

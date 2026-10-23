@@ -1,0 +1,74 @@
+{
+  "company_id": "company-metal",
+  "profile_version": 1,
+  "ruleset_version": "f2-baseline-v1",
+  "as_of": "2026-10-23T00:00:00Z",
+  "threshold": 0.05,
+  "threshold_lowered": true,
+  "adjacent_expanded": false,
+  "items": [
+    {
+      "company_id": "company-metal",
+      "event_id": "synthetic-construction",
+      "profile_version": 1,
+      "event_version": 1,
+      "ruleset_version": "f2-baseline-v1",
+      "score": 0.8,
+      "freshness": 1,
+      "importance": 0.8,
+      "breakdown": [
+        {
+          "channel": "demand",
+          "sector": "Строительство",
+          "source": "matrix",
+          "evidence": [
+            "synthetic:construction_buys_steel"
+          ],
+          "weight": 0.7,
+          "match": 1,
+          "contribution": 0.8,
+          "reason": "sector_exact"
+        }
+      ],
+      "passed_level": true,
+      "reason": "matched_channels:demand",
+      "expanded": false
+    },
+    {
+      "company_id": "company-metal",
+      "event_id": "synthetic-unrelated",
+      "profile_version": 1,
+      "event_version": 1,
+      "ruleset_version": "f2-baseline-v1",
+      "score": 0,
+      "freshness": 1,
+      "importance": 1,
+      "breakdown": [
+        {
+          "channel": "demand",
+          "sector": "Строительство",
+          "source": "matrix",
+          "evidence": [
+            "synthetic:construction_buys_steel"
+          ],
+          "weight": 0.7,
+          "match": 0,
+          "contribution": 0,
+          "reason": "no_sector_match"
+        }
+      ],
+      "passed_level": false,
+      "reason": "no_matching_channels",
+      "expanded": false
+    }
+  ],
+  "selected_event_ids": [
+    "synthetic-construction"
+  ],
+  "excluded": {},
+  "warnings": [
+    "baseline_not_calibrated_on_golden_set",
+    "fewer_than_min_events",
+    "adjacent_sector_matrix_not_configured"
+  ]
+}

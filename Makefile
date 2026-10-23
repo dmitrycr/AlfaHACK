@@ -1,6 +1,6 @@
 SHELL := /bin/sh
 PYTHON ?= python3
-MODULES := ./contracts/... ./libs/go/... ./services/api-gateway/... ./services/company-service/... ./services/news-service/... ./services/event-service/... ./services/analytics-service/...
+MODULES := ./contracts/... ./libs/go/... ./services/api-gateway/... ./services/company-service/... ./services/news-service/... ./services/event-service/... ./services/analytics-service/... ./services/scoring-service/...
 COMPOSE := docker compose --env-file .env -f infrastructure/docker/compose.yaml
 
 .PHONY: setup up down collect test integration race vet fmt check e2e native-e2e logs contracts
