@@ -106,7 +106,7 @@ def test_short_ocr_pages_are_reported_as_charts_or_tables(tmp_path):
     src = tmp_path / "b"
     src.mkdir()
     scan_pdf(src / "Doc.pdf")
-    rep = ingest_dir(src, tmp_path / "c.jsonl", ocr=FakeOCR([PAGES[0], "1,5 2,0 3,1"]))
+    rep = ingest_dir(src, tmp_path / "c.jsonl", ocr=FakeOCR([PAGES[0], "Рис. 1 ставка 14%"]))
     d = rep.documents[0]
     assert d["short_pages"] == [2] and d["pages"] == 2 and d["chars"] > 100 and 0.5 < d["cyr_share"] <= 1
 
@@ -186,3 +186,47 @@ def test_fixture_documents_without_meta_keep_old_behaviour(tmp_path):
     ingest_dir(src, out, meta={})
     ch = chunks_of(out)
     assert all(c["title"] == "" and c["stale"] is False for c in ch) and all(c["date_source"] != "config" for c in ch)
+
+
+# ---------- чистка шума OCR ----------
+def test_noise_lines_axis_labels_and_garbage_are_dropped_tables_are_kept():
+    from ml.knowledge.ingest import drop_noise_lines, is_noise_line
+    noise = ["100 2100 12,5 95 1900", "14.01.2026 14.02.2026 14.03.2026", "0,40 0,35 0,30 0,25", "Я Я о ,, 12 1.", "-2,5% -2,0% -1,5% -1,0%", "2K21 1K21 4K20"]
+    kept = ["Об-рот розн.торг., % г/г 4,1% 3,6% 5,4% 2,2%", "Ticker Revenue %. QoQ EBITDA 2332 +35% 1119 +58%",
+            "Реал. зарплаты, % г/г 5,2% 8,7% 6,3% 8,6%", "Ставка 14,0% на конец 2026 г.", "Источники: ЦБ, Минфин, МосБиржа, Альфа-Банк",
+            "Янв.26 Фев.26 Мар.26 Апр.26", "Рис. 1: Продажи автомобилей", ""]
+    assert all(is_noise_line(s) for s in noise), [s for s in noise if not is_noise_line(s)]
+    assert not any(is_noise_line(s) for s in kept), [s for s in kept if is_noise_line(s)]
+    text = "\n".join(["Ставка 14,0% сохранена.", "100 2100 12,5 95 1900", "", "Инфляция замедлилась.", "0,40 0,35 0,30"])
+    clean, dropped = drop_noise_lines(text)
+    assert clean.split("\n") == ["Ставка 14,0% сохранена.", "", "Инфляция замедлилась."]
+    assert dropped == ["100 2100 12,5 95 1900", "0,40 0,35 0,30"] and "\n\n" in clean          # абзацы сохранены
+
+
+def test_ocr_noise_is_dropped_on_read_but_cache_keeps_raw_text(tmp_path):
+    src = tmp_path / "b"
+    src.mkdir()
+    scan_pdf(src / "Chart.pdf", 1)
+    raw = "Доходность ОФЗ выросла после заседания ЦБ.\r\n100 2100 12,5 95 1900\r\n14.01.2026 14.02.2026\r\nКлючевая ставка 14,0%."
+    out = tmp_path / "c.jsonl"
+    rep = ingest_dir(src, out, ocr=FakeOCR([raw]))
+    text = chunks_of(out)[0]["text"]
+    assert "2100" not in text and "Доходность ОФЗ" in text and "Ключевая ставка 14,0%" in text
+    assert rep.documents[0]["noise_dropped"] == 2
+    cached = (tmp_path / "b_text" / "Chart" / "1.txt").read_text(encoding="utf-8")
+    assert "100 2100 12,5 95 1900" in cached                                                  # кеш OCR не изменяется
+
+
+# ---------- множитель stale ----------
+def test_stale_factor_makes_fresh_document_win_on_equal_text():
+    from ml.knowledge import BM25Retriever, Chunk
+    text = "ключевая ставка выросла инфляция ожидания рынок облигаций доходность"
+    mk = lambda cid, doc, stale: Chunk(cid, doc, 1, "ставка", text, slug=doc, published_at="2026-09-01T00:00:00+03:00", stale=stale)  # noqa: E731
+    filler = [Chunk(f"f{i}", f"F{i}", 1, "прочее", f"совершенно другой текст про золото номер {i} и сталь", slug=f"f{i}",
+                    published_at="2026-09-01T00:00:00+03:00") for i in range(6)]
+    chunks = [mk("old", "Old", True), mk("new", "New", False), *filler]
+    plain = BM25Retriever(chunks).search("ключевая ставка инфляция", 2)
+    assert plain[0].chunk_id == "old" and plain[0].score == plain[1].score                     # без множителя при равенстве выигрывает порядок
+    fair = BM25Retriever(chunks, stale_factor=0.8).search("ключевая ставка инфляция", 2)
+    assert [c.chunk_id for c in fair] == ["new", "old"] and fair[1].score == pytest.approx(fair[0].score * 0.8)
+    assert load_config()["knowledge"]["stale_factor"] == 0.8

@@ -65,6 +65,7 @@ class BM25Retriever(Retriever):
     chunks: list[Chunk]
     min_score: float = 0.0              # лучший результат слабее порога -> пустой список
     min_coverage: float = 0.0           # доля лемм запроса, которые должны встретиться во фрагменте (отсекает случайные совпадения)
+    stale_factor: float = 1.0           # множитель оценки для устаревших документов (stale): при равенстве выигрывают свежие
     _bm25: BM25Okapi | None = field(default=None, init=False, repr=False)
     _tokens: list[set] = field(default_factory=list, init=False, repr=False)
 
@@ -75,7 +76,7 @@ class BM25Retriever(Retriever):
             self._tokens = [set(d) for d in docs]
 
     @classmethod
-    def from_file(cls, path: str | Path, min_score: float = 0.0, min_coverage: float = 0.0) -> BM25Retriever:
+    def from_file(cls, path: str | Path, min_score: float = 0.0, min_coverage: float = 0.0, stale_factor: float = 1.0) -> BM25Retriever:
         p = Path(path)
         chunks = []
         if p.exists():
@@ -83,13 +84,13 @@ class BM25Retriever(Retriever):
                 if line.strip():
                     d = json.loads(line)
                     chunks.append(Chunk(**{k: d[k] for k in Chunk.__dataclass_fields__ if k in d}))
-        return cls(chunks, min_score, min_coverage)
+        return cls(chunks, min_score, min_coverage, stale_factor)
 
     def search(self, query: str, k: int = 3, topics: list[str] | None = None) -> list[Chunk]:
         q = tokenize(query)
         if self._bm25 is None or not q:
             return []
-        scores = self._bm25.get_scores(q)
+        scores = [s * (self.stale_factor if self.chunks[i].stale else 1.0) for i, s in enumerate(self._bm25.get_scores(q))]
         ranked = sorted(((s, i) for i, s in enumerate(scores) if not topics or self.chunks[i].topic in topics),
                         key=lambda t: (-t[0], t[1]))
         if not ranked or ranked[0][0] <= 0 or ranked[0][0] < self.min_score:

@@ -24,7 +24,8 @@ def bank_dir(cfg: dict) -> Path:
 def load_retriever(cfg: dict | None = None) -> BM25Retriever:
     cfg = cfg or get_config()
     k = cfg["knowledge"]
-    return BM25Retriever.from_file(resolve_path(cfg["paths"]["bank_chunks"]), float(k["min_score"]), float(k.get("min_coverage", 0.0)))
+    return BM25Retriever.from_file(resolve_path(cfg["paths"]["bank_chunks"]), float(k["min_score"]), float(k.get("min_coverage", 0.0)),
+                                  float(k.get("stale_factor", 1.0)))
 
 
 def get_retriever() -> Retriever:

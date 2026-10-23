@@ -64,7 +64,8 @@ knowledge:
   k: 3
   min_score: 0.5             # подобрано по tests/fixtures/rag_queries.csv
   ocr: {lang: "rus+eng", dpi: 300, workers: 4, timeout_s: 300}   # страницы PDF без текстового слоя; результат: <bank_analytics>_text/<документ>/<страница>.txt
-  min_coverage: 0.5          # доля лемм запроса во фрагменте; TODO(align): подобрать на реальных PDF банка
+  stale_factor: 0.8          # множитель оценки для устаревших документов (bank_documents.yaml: stale: true)
+  min_coverage: 0.5          # доля лемм запроса во фрагменте; на реальных PDF (rag_queries_real + rag_queries_negative) 0.3 и 0.4 дают ложные ответы на отрицательных запросах, 0.5 - нет
 tagging:
   lead_chars: 700
   min_text_chars: 20
