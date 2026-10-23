@@ -1,0 +1,133 @@
+name: alfa-insight
+
+x-app: &app
+  restart: unless-stopped
+  init: true
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  depends_on:
+    postgres: {condition: service_healthy}
+    kafka-init: {condition: service_completed_successfully}
+  networks: [backend]
+  environment: &env
+    APP_ENV: ${APP_ENV:-development}
+    INTERNAL_KEY: ${INTERNAL_KEY:?Run scripts/setup.sh}
+    KAFKA_BROKERS: kafka:9092
+    HTTP_ADDR: :8080
+    GRPC_ADDR: :9090
+
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: alfa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup.sh}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:?required}
+      COMPANY_DB_PASSWORD: ${COMPANY_DB_PASSWORD:?required}
+      NEWS_DB_PASSWORD: ${NEWS_DB_PASSWORD:?required}
+      EVENTS_DB_PASSWORD: ${EVENTS_DB_PASSWORD:?required}
+      ANALYTICS_DB_PASSWORD: ${ANALYTICS_DB_PASSWORD:?required}
+    ports: ["127.0.0.1:${POSTGRES_PORT:-15432}:5432"]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../postgres/init.sh:/docker-entrypoint-initdb.d/001-init.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d alfa"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    networks: [backend]
+
+  kafka:
+    image: apache/kafka:4.0.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:19092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://127.0.0.1:${KAFKA_PORT:-19092}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_MESSAGE_MAX_BYTES: 3145728
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 3145728
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    ports: ["127.0.0.1:${KAFKA_PORT:-19092}:19092"]
+    volumes: [kafka-data:/var/lib/kafka/data]
+    healthcheck:
+      test: [CMD-SHELL, "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
+    networks: [backend]
+
+  kafka-init:
+    image: apache/kafka:4.0.0
+    depends_on:
+      kafka: {condition: service_healthy}
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        for topic in news.articles.v1 news.ingestion.v1 events.lifecycle.v1 processing.dlq.v1; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic "$$topic" --partitions 3 --replication-factor 1
+        done
+    networks: [backend]
+
+  company-service:
+    <<: *app
+    build: {context: ../.., dockerfile: services/company-service/Dockerfile}
+    environment:
+      <<: *env
+      DATABASE_URL: postgres://app_company:${COMPANY_DB_PASSWORD}@postgres:5432/alfa?sslmode=disable
+      SEED_DEMO: ${SEED_DEMO:-true}
+
+  news-service:
+    <<: *app
+    build: {context: ../.., dockerfile: services/news-service/Dockerfile}
+    environment:
+      <<: *env
+      DATABASE_URL: postgres://app_news:${NEWS_DB_PASSWORD}@postgres:5432/alfa?sslmode=disable
+      SOURCE_MODE: fixture
+
+  event-service:
+    <<: *app
+    build: {context: ../.., dockerfile: services/event-service/Dockerfile}
+    environment:
+      <<: *env
+      DATABASE_URL: postgres://app_events:${EVENTS_DB_PASSWORD}@postgres:5432/alfa?sslmode=disable
+
+  analytics-service:
+    <<: *app
+    build: {context: ../.., dockerfile: services/analytics-service/Dockerfile}
+    environment:
+      <<: *env
+      DATABASE_URL: postgres://app_analytics:${ANALYTICS_DB_PASSWORD}@postgres:5432/alfa?sslmode=disable
+
+  api-gateway:
+    <<: *app
+    build: {context: ../.., dockerfile: services/api-gateway/Dockerfile}
+    environment:
+      <<: *env
+      DATABASE_URL: postgres://app_auth:${AUTH_DB_PASSWORD}@postgres:5432/alfa?sslmode=disable
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SEED_DEMO: ${SEED_DEMO:-true}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?required}
+    ports: ["127.0.0.1:${GATEWAY_PORT:-8080}:8080"]
+
+networks:
+  backend:
+    internal: true
+volumes:
+  postgres-data:
+  kafka-data:

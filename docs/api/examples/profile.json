@@ -1,0 +1,22 @@
+{
+  "company_id": "company-metal",
+  "version": 1,
+  "ruleset_version": "synthetic-v1",
+  "channels": [
+    {
+      "name": "demand",
+      "sector": "Строительство",
+      "weight": 0.7,
+      "source": "matrix",
+      "evidence": [
+        "synthetic:construction_buys_steel"
+      ]
+    }
+  ],
+  "factor_exposure": {
+    "interest_rate": null
+  },
+  "coverage": null,
+  "built_at": "2026-10-21T00:00:00Z",
+  "synthetic": true
+}

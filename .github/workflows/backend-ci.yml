@@ -1,0 +1,46 @@
+name: Backend CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        ports: [5432:5432]
+        options: --health-cmd pg_isready --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://postgres:ci-only-password@127.0.0.1:5432/postgres?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.1'
+          cache-dependency-path: '**/go.sum'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: make check
+      - run: make race
+      - run: pip install -r scripts/requirements-contracts.txt
+      - run: make contracts
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r scripts/requirements-contracts.txt
+      - run: make setup
+      - run: make up
+      - run: make e2e
+        env:
+          E2E_VALIDATE_CONTRACTS: 'true'
+      - if: always()
+        run: docker compose --env-file .env -f infrastructure/docker/compose.yaml logs --no-color
+      - if: always()
+        run: make down

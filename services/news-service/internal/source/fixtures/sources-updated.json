@@ -1,0 +1,211 @@
+{
+  "version": "mock-v1",
+  "sources": [
+    {
+      "id": "rss-full",
+      "kind": "rss",
+      "url": "https://rss-full.test/feed",
+      "enabled": true,
+      "priority": 5,
+      "poll_seconds": 300,
+      "timezone": "Europe/Moscow",
+      "date_layouts": [],
+      "full_text": true,
+      "allowed_hosts": [
+        "rss-full.test"
+      ],
+      "selectors": {},
+      "json_fields": {},
+      "max_pages": 3,
+      "max_items": 100,
+      "version": "mock-v1"
+    },
+    {
+      "id": "rss-short",
+      "kind": "rss",
+      "url": "https://rss-short.test/feed",
+      "enabled": true,
+      "priority": 5,
+      "poll_seconds": 300,
+      "timezone": "Europe/Moscow",
+      "date_layouts": [],
+      "full_text": false,
+      "allowed_hosts": [
+        "rss-short.test"
+      ],
+      "selectors": {
+        "title": "h1",
+        "body": "article"
+      },
+      "json_fields": {},
+      "max_pages": 3,
+      "max_items": 100,
+      "version": "mock-v1"
+    },
+    {
+      "id": "atom",
+      "kind": "atom",
+      "url": "https://atom.test/feed",
+      "enabled": true,
+      "priority": 5,
+      "poll_seconds": 300,
+      "timezone": "Europe/Moscow",
+      "date_layouts": [],
+      "full_text": true,
+      "allowed_hosts": [
+        "atom.test"
+      ],
+      "selectors": {},
+      "json_fields": {},
+      "max_pages": 3,
+      "max_items": 100,
+      "version": "mock-v1"
+    },
+    {
+      "id": "html-css",
+      "kind": "html",
+      "url": "https://html.test/list",
+      "enabled": true,
+      "priority": 5,
+      "poll_seconds": 300,
+      "timezone": "Europe/Moscow",
+      "date_layouts": [],
+      "full_text": false,
+      "allowed_hosts": [
+        "html.test"
+      ],
+      "selectors": {
+        "items": ".news-list .news-link",
+        "link": "a",
+        "next": "a.next",
+        "title": ".headline",
+        "body": ".article-body",
+        "date": "time.published"
+      },
+      "json_fields": {},
+      "max_pages": 3,
+      "max_items": 100,
+      "version": "mock-v1"
+    },
+    {
+      "id": "html-jsonld",
+      "kind": "html",
+      "url": "https://jsonld.test/list",
+      "enabled": true,
+      "priority": 5,
+      "poll_seconds": 300,
+      "timezone": "Europe/Moscow",
+      "date_layouts": [],
+      "full_text": false,
+      "allowed_hosts": [
+        "jsonld.test"
+      ],
+      "selectors": {
+        "items": "a.story",
+        "link": "a"
+      },
+      "json_fields": {},
+      "max_pages": 3,
+      "max_items": 100,
+      "version": "mock-v1"
+    },
+    {
+      "id": "json-api",
+      "kind": "json",
+      "url": "https://json.test/api/news",
+      "enabled": true,
+      "priority": 5,
+      "poll_seconds": 300,
+      "timezone": "Europe/Moscow",
+      "date_layouts": [],
+      "full_text": true,
+      "allowed_hosts": [
+        "json.test"
+      ],
+      "selectors": {},
+      "json_fields": {
+        "items": "items",
+        "id": "id",
+        "url": "url",
+        "title": "title",
+        "text": "body",
+        "published_at": "published"
+      },
+      "max_pages": 3,
+      "max_items": 100,
+      "version": "mock-v1"
+    }
+  ],
+  "resources": {
+    "https://rss-full.test/feed": {
+      "file": "fixtures/rss-full-updated.xml",
+      "status": 200,
+      "headers": {
+        "ETag": "\"mock-v2\""
+      }
+    },
+    "https://rss-short.test/feed": {
+      "file": "fixtures/rss-short.xml",
+      "status": 200,
+      "headers": {
+        "ETag": "\"mock-v1\""
+      }
+    },
+    "https://rss-short.test/articles/housing": {
+      "file": "fixtures/housing.html",
+      "status": 200,
+      "headers": {
+        "ETag": "\"mock-v1\""
+      }
+    },
+    "https://atom.test/feed": {
+      "file": "fixtures/atom.xml",
+      "status": 200,
+      "headers": {
+        "ETag": "\"mock-v1\""
+      }
+    },
+    "https://html.test/list": {
+      "file": "fixtures/listing.html",
+      "status": 200,
+      "headers": {
+        "ETag": "\"mock-v1\""
+      }
+    },
+    "https://html.test/list?page=2": {
+      "file": "fixtures/listing-2.html",
+      "status": 200,
+      "headers": {
+        "ETag": "\"mock-v1\""
+      }
+    },
+    "https://html.test/articles/grain": {
+      "file": "fixtures/grain.html",
+      "status": 200,
+      "headers": {
+        "ETag": "\"mock-v1\""
+      }
+    },
+    "https://jsonld.test/list": {
+      "file": "fixtures/jsonld-list.html",
+      "status": 200,
+      "headers": {
+        "ETag": "\"mock-v1\""
+      }
+    },
+    "https://jsonld.test/articles/tax": {
+      "file": "fixtures/jsonld.html",
+      "status": 200,
+      "headers": {
+        "ETag": "\"mock-v1\""
+      }
+    },
+    "https://json.test/api/news": {
+      "file": "fixtures/api.json",
+      "status": 200,
+      "headers": {
+        "ETag": "\"mock-v1\""
+      }
+    }
+  }
+}

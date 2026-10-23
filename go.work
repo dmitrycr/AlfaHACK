@@ -1,0 +1,11 @@
+go 1.25.0
+
+use (
+	./contracts
+	./libs/go
+	./services/api-gateway
+	./services/company-service
+	./services/news-service
+	./services/event-service
+	./services/analytics-service
+)
