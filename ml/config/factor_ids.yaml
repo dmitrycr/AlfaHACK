@@ -1,0 +1,19 @@
+# Факторы из sectors.yaml (русские имена) -> идентификаторы для Event.factors (контракт v0.1).
+# TODO(align): в контракте известны только примеры key_rate, usd, cny, steel (в Profile ещё coal, usd_try);
+# остальные идентификаторы - рабочее предположение, согласовать с командой.
+ставка: key_rate
+инфляция: inflation
+USD: usd
+CNY: cny
+EUR: eur
+нефть: oil
+газ: gas
+сталь: steel
+уголь: coal
+удобрения: fertilizers
+зерно: grain
+золото: gold
+тарифы: tariffs
+налоги: taxes
+санкции: sanctions
+пошлины: duties

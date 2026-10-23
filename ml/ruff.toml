@@ -1,0 +1,11 @@
+line-length = 130
+target-version = "py311"
+extend-exclude = ["src/ml/grpc_gen", "data", "reports", ".cache"]
+
+[lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[lint.per-file-ignores]
+"scripts/*" = ["E402", "I001"]
+"tests/*" = ["E402", "I001"]

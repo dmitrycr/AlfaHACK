@@ -1,0 +1,249 @@
+{
+  "event": {
+    "event_id": "E-0001",
+    "title": "Правительство сокращает программу льготной ипотеки",
+    "summary": "Лимиты льготной ипотеки снижаются со следующего квартала. Застройщики ждут падения продаж.",
+    "sources": [
+      {
+        "url": "https://example.com/news/ipoteka",
+        "name": "Деловое издание (пример)",
+        "published_at": "2026-10-20T09:00:00+03:00",
+        "kind": "news",
+        "fragment_id": null
+      }
+    ],
+    "type": "regulation",
+    "sectors": [
+      "Строительство"
+    ],
+    "okved": [
+      "41",
+      "43"
+    ],
+    "companies": [],
+    "regions": [
+      "РФ"
+    ],
+    "factors": [
+      "key_rate"
+    ],
+    "direction": "negative",
+    "horizon": "medium",
+    "importance": 4,
+    "collected_at": "2026-10-20T10:00:00+03:00"
+  },
+  "profile": {
+    "client_id": "U_000123",
+    "okved": {
+      "section": "C",
+      "class": "24",
+      "group": "24.10"
+    },
+    "sector": "Металлургия",
+    "revenue_bln_rub": 180.0,
+    "region": "Липецкая обл.",
+    "products": {
+      "loan": true,
+      "leasing": true,
+      "factoring": false,
+      "deposit": true
+    },
+    "ved": {
+      "fts_flag": true,
+      "country": "Турция"
+    },
+    "counterparties": [
+      {
+        "side": "buyer",
+        "sector": "Строительство",
+        "share": 0.34
+      },
+      {
+        "side": "supplier",
+        "sector": "Горнодобыча",
+        "share": 0.41
+      }
+    ],
+    "top_counterparty_share": 0.22,
+    "channels": [
+      {
+        "name": "demand",
+        "weight": 0.78,
+        "source": "data",
+        "evidence": "34% входящего оборота от компаний с ОКВЭД 41-43"
+      },
+      {
+        "name": "financial",
+        "weight": 0.6,
+        "source": "data",
+        "evidence": "Есть кредит и лизинг в банке"
+      }
+    ],
+    "factor_exposure": {
+      "key_rate": "high",
+      "coal": "high",
+      "usd_try": "medium"
+    },
+    "built_at": "2026-10-23T12:00:00+03:00"
+  },
+  "match": {
+    "client_id": "U_000123",
+    "event_id": "E-0001",
+    "score": 0.78,
+    "breakdown": [
+      {
+        "channel": "demand",
+        "weight": 0.78,
+        "match": 0.9,
+        "contribution": 0.7
+      },
+      {
+        "channel": "financial",
+        "weight": 0.6,
+        "match": 0.13,
+        "contribution": 0.08
+      }
+    ],
+    "passed_level": 3
+  },
+  "insight": {
+    "schema_version": "0.1",
+    "insight_id": "I-0001",
+    "client_id": "U_000123",
+    "event_id": "E-0001",
+    "role": "cfo",
+    "channel_label": "через покупателей",
+    "summary": "Сокращение льготной ипотеки ударит по застройщикам, а они дают треть вашей выручки. Вероятно снижение спроса на арматуру и рост дебиторки в ближайшие 1-6 месяцев.",
+    "blocks": {
+      "what": "Лимиты льготной ипотеки снижаются со следующего квартала.",
+      "why": "34% входящего оборота приходится на застройщиков.",
+      "consequences": "Риск: падение заказов и задержки оплат. Возможность: переток спроса в инфраструктуру.",
+      "actions": "Проверить концентрацию на крупнейшем покупателе, обсудить факторинг.",
+      "bank_view": "Банк ждёт охлаждения потребительского кредитования.",
+      "basis": "1 новость, 1 материал банка, 2 признака профиля."
+    },
+    "statements": [
+      {
+        "text": "Лимиты льготной ипотеки снижаются со следующего квартала.",
+        "layer": "fact",
+        "sources": [
+          {
+            "url": "https://example.com/news/ipoteka",
+            "name": "Деловое издание (пример)",
+            "published_at": "2026-10-20T09:00:00+03:00",
+            "kind": "news",
+            "fragment_id": null
+          }
+        ],
+        "profile_features": []
+      },
+      {
+        "text": "Банк ожидает охлаждения кредитования населения.",
+        "layer": "bank",
+        "sources": [
+          {
+            "url": "https://example.com/alfa/tactical-q3",
+            "name": "Тактический взгляд на 3-й квартал 2026",
+            "published_at": "2026-07-01T10:00:00+03:00",
+            "kind": "bank_analytics",
+            "fragment_id": "tq3-07"
+          }
+        ],
+        "profile_features": []
+      },
+      {
+        "text": "Спрос на продукцию компании может снизиться через застройщиков.",
+        "layer": "ai",
+        "sources": [
+          {
+            "url": "https://example.com/news/ipoteka",
+            "name": "Деловое издание (пример)",
+            "published_at": "2026-10-20T09:00:00+03:00",
+            "kind": "news",
+            "fragment_id": null
+          }
+        ],
+        "profile_features": [
+          "34% выручки от стройки",
+          "один покупатель даёт 22%"
+        ]
+      }
+    ],
+    "risks": [
+      "Снижение заказов от застройщиков",
+      "Рост дебиторской задолженности"
+    ],
+    "opportunities": [
+      "Переориентация на инфраструктурные проекты"
+    ],
+    "next_action": "Обсудить с менеджером банка факторинг",
+    "confidence": 0.72,
+    "bank_conflict": false,
+    "run_id": "R-0001"
+  },
+  "trace": {
+    "run_id": "R-0001",
+    "client_id": "U_000123",
+    "event_id": "E-0001",
+    "plan": [
+      "Взять профиль",
+      "Взять событие и скор",
+      "Найти аналитику банка",
+      "Построить карточку",
+      "Проверить"
+    ],
+    "steps": [
+      {
+        "step": "context",
+        "tool": "get_profile",
+        "input_ref": null,
+        "output_ref": null,
+        "model": null,
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "cost_rub": 0.0,
+        "duration_ms": 40,
+        "status": "ok"
+      },
+      {
+        "step": "search",
+        "tool": "search_bank_analytics",
+        "input_ref": null,
+        "output_ref": null,
+        "model": null,
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "cost_rub": 0.0,
+        "duration_ms": 300,
+        "status": "ok"
+      },
+      {
+        "step": "generation",
+        "tool": null,
+        "input_ref": null,
+        "output_ref": null,
+        "model": "GLM-5.3-Flash",
+        "tokens_in": 3200,
+        "tokens_out": 600,
+        "cost_rub": 0.4,
+        "duration_ms": 9000,
+        "status": "ok"
+      }
+    ],
+    "checks": [
+      {
+        "name": "Все утверждения с источником",
+        "passed": true,
+        "action": null
+      },
+      {
+        "name": "Не меньше 2 признаков компании",
+        "passed": true,
+        "action": null
+      }
+    ],
+    "prompt_version": "interp-v1",
+    "started_at": "2026-10-23T12:05:00+03:00",
+    "finished_at": "2026-10-23T12:05:10+03:00"
+  }
+}
