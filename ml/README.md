@@ -81,7 +81,7 @@ curl -X POST localhost:8003/analyze_text -d '{"client_id":"DEMO_1","role":"CFO",
 
 `src/ml/contract.py` — командный контракт данных v0.1 (побайтовая копия обновлённого `schemas.py` команды, без изменений; главный). `src/ml/schemas.py` (приложение А) не используется
 тегированием и остаётся для кода профилей. `src/ml/tagging/`: `guard.py` (защита от инъекций), `aliases.py` (компании -> сектор), `tagger.py` (`Tagger.tag_event`),
-`mock_rules.py` (правила для ответов в режиме mock). Промпт: `src/ml/prompts/tagging-v3.txt` (версия `tagging-v3`; ключ кеша тегов `tags:tagging-v3` включает версию, теги прежних версий не подмешиваются): определения семи типов с вымышленными примерами, список секторов берётся из `config/sectors.yaml` (16 секторов без служебного «Прочее»).
+`mock_rules.py` (правила для ответов в режиме mock). Промпт: `src/ml/prompts/tagging-v3.1.txt` (версия `tagging-v3.1`; ключ кеша тегов `tags:tagging-v3.1:<хеш секторов>` включает версию, теги прежних версий не подмешиваются): определения семи типов с вымышленными примерами, список секторов берётся из `config/sectors.yaml` (16 секторов без служебного «Прочее»).
 `Event` собирается так: `event_id`, `title` из входа (после очистки), `sources = [SourceRef(url, name=source, published_at, kind=news)]`, `collected_at` = момент вызова,
 остальное из ответа модели; без корректного `url` Event не строится (`event = null`, `noise_reason = "нет источника"`, LLM не вызывается).
 Значения `type`, `direction`, `horizon` — из контракта, `sectors` — из `config/sectors.yaml`, `factors` — идентификаторы из `config/factor_ids.yaml`, `okved` — двузначные коды; прочее отбрасывается с записью в лог.

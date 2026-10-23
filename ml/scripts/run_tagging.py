@@ -15,7 +15,10 @@ from ml.tagging.tagger import PROMPT_VERSION
 
 
 def sectors_match(expected: list, got: list[str]) -> bool:
-    """Каждый ожидаемый сектор найден среди ответа; элемент-список = альтернативы (подходит любой из них)."""
+    """Каждый ожидаемый сектор найден среди ответа; элемент-список = альтернативы (подходит любой из них).
+    Пустое ожидание = модель должна вернуть пустой список секторов."""
+    if not expected:
+        return not got
     return all(any(x in got for x in (e if isinstance(e, list) else [e])) for e in expected)
 
 
@@ -87,7 +90,7 @@ def main(argv: list[str] | None = None) -> int:
     sec_total = sec_ok = 0
     sec_bad = []
     for ev, res in results:
-        if ev.get("expected_sectors") and res.event is not None:
+        if "expected_sectors" in ev and res.event is not None:
             sec_total += 1
             if sectors_match(ev["expected_sectors"], res.event.sectors):
                 sec_ok += 1

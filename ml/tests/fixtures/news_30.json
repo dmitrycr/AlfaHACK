@@ -62,10 +62,7 @@
     "url": "https://news.example.com/2026/10/evt-006",
     "expected_type": "regulation",
     "expected_sectors": [
-      [
-        "Металлургия",
-        "Горнодобыча (уголь, драгметаллы, алмазы)"
-      ]
+      "Металлургия"
     ]
   },
   {
@@ -124,9 +121,7 @@
     "source": "Деловое издание (пример)",
     "url": "https://news.example.com/2026/10/evt-011",
     "expected_type": "commodity",
-    "expected_sectors": [
-      "Нефть и газ"
-    ]
+    "expected_sectors": []
   },
   {
     "event_id": "evt_012",
@@ -137,10 +132,7 @@
     "url": "https://news.example.com/2026/10/evt-012",
     "expected_type": "commodity",
     "expected_sectors": [
-      [
-        "Металлургия",
-        "Горнодобыча (уголь, драгметаллы, алмазы)"
-      ]
+      "Металлургия"
     ]
   },
   {
@@ -151,9 +143,7 @@
     "source": "Деловое издание (пример)",
     "url": "https://news.example.com/2026/10/evt-013",
     "expected_type": "commodity",
-    "expected_sectors": [
-      "Химия, удобрения, нефтехимия"
-    ]
+    "expected_sectors": []
   },
   {
     "event_id": "evt_014",
@@ -164,10 +154,7 @@
     "url": "https://news.example.com/2026/10/evt-014",
     "expected_type": "commodity",
     "expected_sectors": [
-      [
-        "Металлургия",
-        "Горнодобыча (уголь, драгметаллы, алмазы)"
-      ]
+      "Металлургия"
     ]
   },
   {
@@ -178,9 +165,7 @@
     "source": "Деловое издание (пример)",
     "url": "https://news.example.com/2026/10/evt-015",
     "expected_type": "commodity",
-    "expected_sectors": [
-      "Пищевая промышленность и агро"
-    ]
+    "expected_sectors": []
   },
   {
     "event_id": "evt_016",
@@ -287,9 +272,7 @@
     "source": "Деловое издание (пример)",
     "url": "https://news.example.com/2026/10/evt-024",
     "expected_type": "regional",
-    "expected_sectors": [
-      "Машиностроение, автопром, ОПК"
-    ]
+    "expected_sectors": []
   },
   {
     "event_id": "evt_025",
@@ -299,9 +282,7 @@
     "source": "Деловое издание (пример)",
     "url": "https://news.example.com/2026/10/evt-025",
     "expected_type": "regional",
-    "expected_sectors": [
-      "Пищевая промышленность и агро"
-    ]
+    "expected_sectors": []
   },
   {
     "event_id": "evt_026",
@@ -312,10 +293,7 @@
     "url": "https://news.example.com/2026/10/evt-026",
     "expected_type": "regional",
     "expected_sectors": [
-      [
-        "Металлургия",
-        "Горнодобыча (уголь, драгметаллы, алмазы)"
-      ],
+      "Металлургия",
       "Энергетика и коммунальные услуги"
     ]
   },
@@ -328,10 +306,7 @@
     "url": "https://news.example.com/2026/10/evt-027",
     "expected_type": "sanctions",
     "expected_sectors": [
-      [
-        "Металлургия",
-        "Горнодобыча (уголь, драгметаллы, алмазы)"
-      ]
+      "Металлургия"
     ]
   },
   {
@@ -366,8 +341,6 @@
     "source": "Деловое издание (пример)",
     "url": "https://news.example.com/2026/10/evt-030",
     "expected_type": "regulation",
-    "expected_sectors": [
-      "Фарма и здравоохранение"
-    ]
+    "expected_sectors": []
   }
 ]

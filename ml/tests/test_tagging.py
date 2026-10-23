@@ -165,10 +165,10 @@ def test_prompt_version_and_placeholders(cfg):
     t = make(cfg)
     t.tag_event(ev())
     prompt = t.llm.requests[0][0]["content"]
-    assert PROMPT_VERSION == "tagging-v3" and "{sectors}" not in prompt and "{lead}" not in prompt
+    assert PROMPT_VERSION == "tagging-v3.1" and "{sectors}" not in prompt and "{lead}" not in prompt
     for v in ("regulation", "key_rate", "Строительство и девелопмент", "unclear", "short", "важность", "<<<NEWS"):
         assert v.lower() in prompt.lower()
-    assert t.llm.store.journal()[0]["prompt_version"] == "tagging-v3"
+    assert t.llm.store.journal()[0]["prompt_version"] == "tagging-v3.1"
 
 
 # ---------- news_dirty ----------
@@ -254,7 +254,7 @@ def test_api_budget_exceeded_is_503(cfg):
         tagging_app.set_tagger(None)
 
 
-# ---- tagging-v3: сектора из xlsx, определения типов, ключ кеша ------------------------------------------------
+# ---- tagging-v3.1: сектора из xlsx, определения типов, ключ кеша ------------------------------------------------
 
 def test_vocab_is_the_enabled_canonical_sectors():
     import yaml
@@ -274,6 +274,7 @@ def test_prompt_v3_has_type_definitions_examples_and_all_sectors(cfg):
     assert "ВВП" in prompt and prompt.count("Пример: «") == 7
     assert all(sector in prompt for sector in VOCAB.sectors) and "Прочее" not in prompt.split("Список секторов:")[1].split("\n")[0]
     assert prompt.rstrip().endswith("Верни только JSON, без пояснений и без комментариев")
+    assert "прямо затрагивает его бизнес" in prompt and "верни пустой список []" in prompt     # правило v3.1 про сектора
 
 
 def test_prompt_examples_are_not_taken_from_fixtures(cfg):

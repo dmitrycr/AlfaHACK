@@ -15,7 +15,7 @@
    `DATA_DIR=./data/real python scripts/build_profiles.py --force --out out/profiles_real.json`
    `python scripts/export_profiles.py --src out/profiles_real.json --out-dir <папка>`
 6. Прогнать тесты (`pytest`) и тегирование (`scripts/run_tagging.py`): список секторов в промпте и ключ кеша тегов
-   (`tags:tagging-v3:<хеш секторов>`) обновятся сами, старые теги другого набора секторов не подмешиваются.
+   (`tags:tagging-v3.1:<хеш секторов>`) обновятся сами, старые теги другого набора секторов не подмешиваются.
 
 ## Что делает флаг enabled
 

@@ -26,7 +26,7 @@ from .guard import sanitize
 
 log = logging.getLogger("ml.tagging")
 
-PROMPT_VERSION = "tagging-v3"
+PROMPT_VERSION = "tagging-v3.1"
 PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / f"{PROMPT_VERSION}.txt"
 TITLE_MAX = 300
 _PLACEHOLDER = re.compile(r"\{(sectors|factors|companies_hint|title|lead)\}")

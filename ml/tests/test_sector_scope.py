@@ -146,13 +146,16 @@ def test_fixture_alternatives_and_sectors_match():
         sys.path.remove(str(ML_ROOT / "scripts"))
     metal = ["Металлургия", "Горнодобыча (уголь, драгметаллы, алмазы)"]
     news = json.loads((FX / "news_30.json").read_text(encoding="utf-8"))
-    alts = [s for n in news for s in n.get("expected_sectors", []) if isinstance(s, list)]
-    assert alts and all(a == metal for a in alts)                                              # «Металлургия и добыча» = любой из двух
-    flat = [s for n in news for s in n.get("expected_sectors", []) if isinstance(s, str)]
-    assert "Металлургия и добыча" not in flat and all(s in load_refdata().sectors for s in flat)
+    expected = [s for n in news for s in n.get("expected_sectors", [])]
+    ref = load_refdata()
+    flat = [x for s in expected for x in (s if isinstance(s, list) else [s])]
+    assert flat and all(ref.is_enabled(s) for s in flat)                  # в ожиданиях только включённые сектора
+    assert any(n.get("expected_sectors") == [] for n in news)             # где включённых не осталось - ожидаем пустой список
+    assert "Металлургия" in flat and "Металлургия и добыча" not in flat
     assert mod.sectors_match([metal, "Нефть и газ"], ["Горнодобыча (уголь, драгметаллы, алмазы)", "Нефть и газ"])
     assert mod.sectors_match([metal], ["Металлургия"]) and not mod.sectors_match([metal], ["Нефть и газ"])
     assert not mod.sectors_match([metal, "Нефть и газ"], ["Металлургия"])
+    assert mod.sectors_match([], []) and not mod.sectors_match([], ["Металлургия"])               # пустое ожидание = пустой ответ
 
 
 # ---------- включение выключенного сектора одним флагом ----------
