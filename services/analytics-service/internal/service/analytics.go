@@ -13,7 +13,7 @@ import (
 type Store struct{ Pool *pgxpool.Pool }
 
 func Handle(ctx context.Context, tx pgx.Tx, m model.Envelope) error {
-	allowed := map[string]bool{"article.stored": true, "article.retry": true, "article.failed": true, "article.quarantined": true, "ingestion.completed": true, "ingestion.failed": true, "event.prepared": true, "event.tagged": true}
+	allowed := map[string]bool{"article.stored": true, "article.retry": true, "article.failed": true, "article.quarantined": true, "ingestion.completed": true, "ingestion.failed": true, "event.prepared": true, "event.tagged": true, "event.excluded": true, "event.tagging_failed": true}
 	if !allowed[m.Type] {
 		return bus.Permanent{Reason: "unsupported_analytics_message"}
 	}

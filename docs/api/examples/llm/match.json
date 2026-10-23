@@ -1,0 +1,17 @@
+{
+  "company_id": "company-test",
+  "event_id": "event-test",
+  "profile_version": 1,
+  "event_version": 2,
+  "ruleset_version": "mock-match-v1",
+  "score": 0.5,
+  "breakdown": [
+    {
+      "channel": "industry",
+      "weight": 1,
+      "match": 0.5,
+      "contribution": 0.5
+    }
+  ],
+  "synthetic": true
+}

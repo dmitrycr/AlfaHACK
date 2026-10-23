@@ -14,12 +14,17 @@ var ErrCredentials = errors.New("invalid_credentials")
 var ErrSession = errors.New("invalid_session")
 var ErrUnavailable = errors.New("authentication_unavailable")
 var ErrRateLimited = errors.New("too_many_attempts")
+var ErrAccessBlocked = errors.New("access_blocked")
 
 type User struct {
-	ID           string `json:"id"`
-	Email        string `json:"email"`
-	CompanyID    string `json:"company_id"`
-	PasswordHash []byte `json:"-"`
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	CompanyID     string `json:"company_id"`
+	FullName      string `json:"full_name"`
+	JobTitle      string `json:"job_title"`
+	EmailVerified bool   `json:"email_verified"`
+	AccessStatus  string `json:"access_status"`
+	PasswordHash  []byte `json:"-"`
 }
 type Session struct {
 	TokenHash string
@@ -78,6 +83,9 @@ func (a *Auth) Login(ctx context.Context, email, password, ip, previous string) 
 	}
 	if e != nil || compareErr != nil {
 		return session, "", "", ErrCredentials
+	}
+	if user.AccessStatus == "blocked" {
+		return session, "", "", ErrAccessBlocked
 	}
 	token, csrf := platform.ID()+platform.ID(), platform.ID()+platform.ID()
 	session = Session{TokenHash: platform.Hash(token), CSRFHash: platform.Hash(csrf), User: user, CreatedAt: now, LastSeen: now, ExpiresAt: now.Add(a.TTL)}

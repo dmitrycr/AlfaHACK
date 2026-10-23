@@ -1,0 +1,10 @@
+{
+  "text": "Изменение ключевой ставки",
+  "sources": [
+    "https://news.example.test/rate"
+  ],
+  "insufficient_data": false,
+  "limitations": [
+    "Ответ мок-провайдера; внешний поиск не выполнялся."
+  ]
+}

@@ -39,7 +39,7 @@ func Open(t *testing.T, schemas ...string) *pgxpool.Pool {
 	t.Cleanup(p.Close)
 	for _, schema := range schemas {
 		switch schema {
-		case "auth", "company", "news", "events", "analytics":
+		case "auth", "company", "news", "events", "analytics", "agent", "insights":
 		default:
 			t.Fatal("invalid test schema")
 		}

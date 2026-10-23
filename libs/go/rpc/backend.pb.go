@@ -155,20 +155,25 @@ const file_v1_backend_proto_rawDesc = "" +
 	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06offset\x18\x05 \x01(\x05R\x06offset\"$\n" +
 	"\bResponse\x12\x18\n" +
-	"\apayload\x18\x01 \x01(\fR\apayload2\xad\x01\n" +
-	"\x0eCompanyService\x121\n" +
+	"\apayload\x18\x01 \x01(\fR\apayload2\x98\x02\n" +
+	"\x0eCompanyService\x123\n" +
+	"\fCheckCompany\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x124\n" +
+	"\rEnsureCompany\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x121\n" +
 	"\n" +
 	"GetCompany\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x121\n" +
 	"\n" +
 	"GetProfile\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x125\n" +
-	"\x0eReplaceProfile\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response2\xda\x01\n" +
-	"\vNewsService\x123\n" +
+	"\x0eReplaceProfile\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response2\x95\x02\n" +
+	"\vNewsService\x129\n" +
+	"\x12GetArticleRevision\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x123\n" +
 	"\fListArticles\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x121\n" +
 	"\n" +
 	"GetArticle\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x12-\n" +
 	"\x06Submit\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x124\n" +
-	"\rGetSubmission\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response2r\n" +
-	"\fEventService\x121\n" +
+	"\rGetSubmission\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response2\xe6\x01\n" +
+	"\fEventService\x127\n" +
+	"\x10GetPreparedEvent\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x129\n" +
+	"\x12ListPreparedEvents\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x121\n" +
 	"\n" +
 	"ListEvents\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response\x12/\n" +
 	"\bGetEvent\x12\x10.alfa.v1.Request\x1a\x11.alfa.v1.Response2E\n" +
@@ -194,28 +199,38 @@ var file_v1_backend_proto_goTypes = []any{
 	(*Response)(nil), // 1: alfa.v1.Response
 }
 var file_v1_backend_proto_depIdxs = []int32{
-	0,  // 0: alfa.v1.CompanyService.GetCompany:input_type -> alfa.v1.Request
-	0,  // 1: alfa.v1.CompanyService.GetProfile:input_type -> alfa.v1.Request
-	0,  // 2: alfa.v1.CompanyService.ReplaceProfile:input_type -> alfa.v1.Request
-	0,  // 3: alfa.v1.NewsService.ListArticles:input_type -> alfa.v1.Request
-	0,  // 4: alfa.v1.NewsService.GetArticle:input_type -> alfa.v1.Request
-	0,  // 5: alfa.v1.NewsService.Submit:input_type -> alfa.v1.Request
-	0,  // 6: alfa.v1.NewsService.GetSubmission:input_type -> alfa.v1.Request
-	0,  // 7: alfa.v1.EventService.ListEvents:input_type -> alfa.v1.Request
-	0,  // 8: alfa.v1.EventService.GetEvent:input_type -> alfa.v1.Request
-	0,  // 9: alfa.v1.AnalyticsService.GetSummary:input_type -> alfa.v1.Request
-	1,  // 10: alfa.v1.CompanyService.GetCompany:output_type -> alfa.v1.Response
-	1,  // 11: alfa.v1.CompanyService.GetProfile:output_type -> alfa.v1.Response
-	1,  // 12: alfa.v1.CompanyService.ReplaceProfile:output_type -> alfa.v1.Response
-	1,  // 13: alfa.v1.NewsService.ListArticles:output_type -> alfa.v1.Response
-	1,  // 14: alfa.v1.NewsService.GetArticle:output_type -> alfa.v1.Response
-	1,  // 15: alfa.v1.NewsService.Submit:output_type -> alfa.v1.Response
-	1,  // 16: alfa.v1.NewsService.GetSubmission:output_type -> alfa.v1.Response
-	1,  // 17: alfa.v1.EventService.ListEvents:output_type -> alfa.v1.Response
-	1,  // 18: alfa.v1.EventService.GetEvent:output_type -> alfa.v1.Response
-	1,  // 19: alfa.v1.AnalyticsService.GetSummary:output_type -> alfa.v1.Response
-	10, // [10:20] is the sub-list for method output_type
-	0,  // [0:10] is the sub-list for method input_type
+	0,  // 0: alfa.v1.CompanyService.CheckCompany:input_type -> alfa.v1.Request
+	0,  // 1: alfa.v1.CompanyService.EnsureCompany:input_type -> alfa.v1.Request
+	0,  // 2: alfa.v1.CompanyService.GetCompany:input_type -> alfa.v1.Request
+	0,  // 3: alfa.v1.CompanyService.GetProfile:input_type -> alfa.v1.Request
+	0,  // 4: alfa.v1.CompanyService.ReplaceProfile:input_type -> alfa.v1.Request
+	0,  // 5: alfa.v1.NewsService.GetArticleRevision:input_type -> alfa.v1.Request
+	0,  // 6: alfa.v1.NewsService.ListArticles:input_type -> alfa.v1.Request
+	0,  // 7: alfa.v1.NewsService.GetArticle:input_type -> alfa.v1.Request
+	0,  // 8: alfa.v1.NewsService.Submit:input_type -> alfa.v1.Request
+	0,  // 9: alfa.v1.NewsService.GetSubmission:input_type -> alfa.v1.Request
+	0,  // 10: alfa.v1.EventService.GetPreparedEvent:input_type -> alfa.v1.Request
+	0,  // 11: alfa.v1.EventService.ListPreparedEvents:input_type -> alfa.v1.Request
+	0,  // 12: alfa.v1.EventService.ListEvents:input_type -> alfa.v1.Request
+	0,  // 13: alfa.v1.EventService.GetEvent:input_type -> alfa.v1.Request
+	0,  // 14: alfa.v1.AnalyticsService.GetSummary:input_type -> alfa.v1.Request
+	1,  // 15: alfa.v1.CompanyService.CheckCompany:output_type -> alfa.v1.Response
+	1,  // 16: alfa.v1.CompanyService.EnsureCompany:output_type -> alfa.v1.Response
+	1,  // 17: alfa.v1.CompanyService.GetCompany:output_type -> alfa.v1.Response
+	1,  // 18: alfa.v1.CompanyService.GetProfile:output_type -> alfa.v1.Response
+	1,  // 19: alfa.v1.CompanyService.ReplaceProfile:output_type -> alfa.v1.Response
+	1,  // 20: alfa.v1.NewsService.GetArticleRevision:output_type -> alfa.v1.Response
+	1,  // 21: alfa.v1.NewsService.ListArticles:output_type -> alfa.v1.Response
+	1,  // 22: alfa.v1.NewsService.GetArticle:output_type -> alfa.v1.Response
+	1,  // 23: alfa.v1.NewsService.Submit:output_type -> alfa.v1.Response
+	1,  // 24: alfa.v1.NewsService.GetSubmission:output_type -> alfa.v1.Response
+	1,  // 25: alfa.v1.EventService.GetPreparedEvent:output_type -> alfa.v1.Response
+	1,  // 26: alfa.v1.EventService.ListPreparedEvents:output_type -> alfa.v1.Response
+	1,  // 27: alfa.v1.EventService.ListEvents:output_type -> alfa.v1.Response
+	1,  // 28: alfa.v1.EventService.GetEvent:output_type -> alfa.v1.Response
+	1,  // 29: alfa.v1.AnalyticsService.GetSummary:output_type -> alfa.v1.Response
+	15, // [15:30] is the sub-list for method output_type
+	0,  // [0:15] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

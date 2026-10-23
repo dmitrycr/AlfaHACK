@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"alfa.local/company-service/migrations"
-	"alfa.local/shared/platform"
 	"alfa.local/shared/testdb"
 	"context"
 	"errors"
@@ -13,10 +12,10 @@ import (
 func TestProfileVersions(t *testing.T) {
 	p := testdb.Open(t, "company")
 	ctx := context.Background()
-	if e := platform.Migrate(ctx, p, "company", migrations.SQL); e != nil {
+	if e := migrations.Apply(ctx, p); e != nil {
 		t.Fatal(e)
 	}
-	if e := platform.Migrate(ctx, p, "company", migrations.SQL); e != nil {
+	if e := migrations.Apply(ctx, p); e != nil {
 		t.Fatal("migration is not idempotent", e)
 	}
 	s := Store{p}

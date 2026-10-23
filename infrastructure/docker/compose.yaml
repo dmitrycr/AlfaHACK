@@ -29,6 +29,8 @@ services:
       COMPANY_DB_PASSWORD: ${COMPANY_DB_PASSWORD:?required}
       NEWS_DB_PASSWORD: ${NEWS_DB_PASSWORD:?required}
       EVENTS_DB_PASSWORD: ${EVENTS_DB_PASSWORD:?required}
+      AGENT_DB_PASSWORD: ${AGENT_DB_PASSWORD:?Run scripts/setup-llm.sh}
+      INSIGHTS_DB_PASSWORD: ${INSIGHTS_DB_PASSWORD:?Run scripts/setup-llm.sh}
       ANALYTICS_DB_PASSWORD: ${ANALYTICS_DB_PASSWORD:?required}
     ports: ["127.0.0.1:${POSTGRES_PORT:-15432}:5432"]
     volumes:
@@ -90,6 +92,7 @@ services:
       <<: *env
       DATABASE_URL: postgres://app_company:${COMPANY_DB_PASSWORD}@postgres:5432/alfa?sslmode=disable
       SEED_DEMO: ${SEED_DEMO:-true}
+      COMPANY_REGISTRY_MODE: ${COMPANY_REGISTRY_MODE:-mock}
 
   news-service:
     <<: *app
@@ -113,8 +116,49 @@ services:
       <<: *env
       DATABASE_URL: postgres://app_analytics:${ANALYTICS_DB_PASSWORD}@postgres:5432/alfa?sslmode=disable
 
+  ai-agent-service:
+    <<: *app
+    build: {context: ../.., dockerfile: services/ai-agent-service/Dockerfile}
+    environment:
+      <<: *env
+      DATABASE_URL: postgres://app_agent:${AGENT_DB_PASSWORD}@postgres:5432/alfa?sslmode=disable
+      LLM_MODE: ${LLM_MODE:-mock}
+      LLM_MOCK_SCENARIO: ${LLM_MOCK_SCENARIO:-success}
+      LLM_DAILY_LIMIT_MINOR: ${LLM_DAILY_LIMIT_MINOR:-50000}
+      LLM_MAX_PARALLEL: ${LLM_MAX_PARALLEL:-4}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-3}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://changellenge.up.railway.app/v1}
+      LLM_FALLBACK_BASE_URL: ${LLM_FALLBACK_BASE_URL:-https://api.alfahack-gateway26.ru/v1}
+      LLM_CONFIG_REVISION: ${LLM_CONFIG_REVISION:-1}
+      LLM_PAID_CALLS_ENABLED: ${LLM_PAID_CALLS_ENABLED:-false}
+      LLM_PRICE_UNIT_TOKENS: ${LLM_PRICE_UNIT_TOKENS:-0}
+      LLM_TARIFFS_CONFIRMED: ${LLM_TARIFFS_CONFIRMED:-false}
+      LLM_PRICES_JSON: ${LLM_PRICES_JSON:-}
+      LLM_KEY_INFO_URL: ${LLM_KEY_INFO_URL:-}
+      LLM_KEY_INFO_REMAINING_PATH: ${LLM_KEY_INFO_REMAINING_PATH:-}
+      LLM_BUDGET_CONTRACT_CONFIRMED: ${LLM_BUDGET_CONTRACT_CONFIRMED:-false}
+      LLM_USAGE_CONTRACT_CONFIRMED: ${LLM_USAGE_CONTRACT_CONFIRMED:-false}
+      LLM_TOKEN_LIMIT_PARAMETER: ${LLM_TOKEN_LIMIT_PARAMETER:-}
+      LLM_TOKEN_LIMIT_CONFIRMED: ${LLM_TOKEN_LIMIT_CONFIRMED:-false}
+      LLM_ALLOW_KIMI: ${LLM_ALLOW_KIMI:-false}
+      LLM_MODEL_TAG: ${LLM_MODEL_TAG:-z-ai/glm-5.3-flash}
+      LLM_MODEL_PROFILE: ${LLM_MODEL_PROFILE:-deepseek/deepseek-v4.1-flash}
+      LLM_MODEL_INSIGHT: ${LLM_MODEL_INSIGHT:-qwen/qwen3.6-35b-a3b}
+      LLM_MODEL_CHECK: ${LLM_MODEL_CHECK:-google/gemma-4-26b-a4b-it}
+      LLM_MODEL_CHAT: ${LLM_MODEL_CHAT:-z-ai/glm-5.3-flash}
+
+  insight-service:
+    <<: *app
+    build: {context: ../.., dockerfile: services/insight-service/Dockerfile}
+    environment:
+      <<: *env
+      DATABASE_URL: postgres://app_insights:${INSIGHTS_DB_PASSWORD}@postgres:5432/alfa?sslmode=disable
+      MATCH_MODE: ${MATCH_MODE:-mock}
+
   api-gateway:
     <<: *app
+    networks: [backend, gateway-access]
     build: {context: ../.., dockerfile: services/api-gateway/Dockerfile}
     environment:
       <<: *env
@@ -123,11 +167,13 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       SEED_DEMO: ${SEED_DEMO:-true}
       DEMO_PASSWORD: ${DEMO_PASSWORD:?required}
+      EMAIL_DELIVERY_MODE: ${EMAIL_DELIVERY_MODE:-mock}
     ports: ["127.0.0.1:${GATEWAY_PORT:-8080}:8080"]
 
 networks:
   backend:
     internal: true
+  gateway-access: {}
 volumes:
   postgres-data:
   kafka-data:

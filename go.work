@@ -7,5 +7,7 @@ use (
 	./services/company-service
 	./services/news-service
 	./services/event-service
+	./services/ai-agent-service
+	./services/insight-service
 	./services/analytics-service
 )

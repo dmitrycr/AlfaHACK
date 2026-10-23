@@ -14,7 +14,7 @@ type Store struct{ Pool *pgxpool.Pool }
 
 func (s Store) FindUser(ctx context.Context, email string) (service.User, error) {
 	var u service.User
-	e := s.Pool.QueryRow(ctx, "SELECT id,email,company_id,password_hash FROM auth.users WHERE email=$1", email).Scan(&u.ID, &u.Email, &u.CompanyID, &u.PasswordHash)
+	e := s.Pool.QueryRow(ctx, "SELECT id,email,company_id,password_hash,full_name,job_title,email_verified,access_status FROM auth.users WHERE email=$1", email).Scan(&u.ID, &u.Email, &u.CompanyID, &u.PasswordHash, &u.FullName, &u.JobTitle, &u.EmailVerified, &u.AccessStatus)
 	if errors.Is(e, pgx.ErrNoRows) {
 		e = service.ErrCredentials
 	}
@@ -42,7 +42,7 @@ func (s Store) CreateSession(ctx context.Context, v service.Session, old string)
 }
 func (s Store) Session(ctx context.Context, hash string, now time.Time, idle time.Duration) (service.Session, error) {
 	var v service.Session
-	e := s.Pool.QueryRow(ctx, `UPDATE auth.sessions AS s SET last_seen_at=$2 FROM auth.users u WHERE s.token_hash=$1 AND u.id=s.user_id AND s.expires_at>$2 AND s.last_seen_at>$3 RETURNING s.token_hash,s.csrf_hash,s.created_at,s.last_seen_at,s.expires_at,u.id,u.email,u.company_id`, hash, now, now.Add(-idle)).Scan(&v.TokenHash, &v.CSRFHash, &v.CreatedAt, &v.LastSeen, &v.ExpiresAt, &v.User.ID, &v.User.Email, &v.User.CompanyID)
+	e := s.Pool.QueryRow(ctx, `UPDATE auth.sessions AS s SET last_seen_at=$2 FROM auth.users u WHERE s.token_hash=$1 AND u.id=s.user_id AND s.expires_at>$2 AND s.last_seen_at>$3 AND u.access_status<>'blocked' RETURNING s.token_hash,s.csrf_hash,s.created_at,s.last_seen_at,s.expires_at,u.id,u.email,u.company_id,u.full_name,u.job_title,u.email_verified,u.access_status`, hash, now, now.Add(-idle)).Scan(&v.TokenHash, &v.CSRFHash, &v.CreatedAt, &v.LastSeen, &v.ExpiresAt, &v.User.ID, &v.User.Email, &v.User.CompanyID, &v.User.FullName, &v.User.JobTitle, &v.User.EmailVerified, &v.User.AccessStatus)
 	if errors.Is(e, pgx.ErrNoRows) {
 		e = service.ErrSession
 	}

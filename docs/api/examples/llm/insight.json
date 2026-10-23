@@ -1,0 +1,94 @@
+{
+  "id": "insight-test",
+  "company_id": "company-test",
+  "event_id": "event-test",
+  "event_version": 2,
+  "profile_version": 1,
+  "ruleset_version": "mock-match-v1",
+  "run_id": "mock-generation-run",
+  "check_run_id": "mock-check-run",
+  "sources": [
+    {
+      "url": "https://news.example.test/rate",
+      "name": "Синтетический источник",
+      "published_at": "2026-10-23T09:00:00Z",
+      "kind": "news"
+    }
+  ],
+  "profile_features": [
+    {
+      "id": "company.sector",
+      "text": "Отрасль: металлургия"
+    },
+    {
+      "id": "company.region",
+      "text": "Регион: тестовый"
+    }
+  ],
+  "workflow_id": "mock-workflow",
+  "profile_run_id": "mock-profile-run",
+  "business_profile": {
+    "company_id": "company-test",
+    "profile_version": 1,
+    "summary": "Синтетическая интерпретация подготовленного профиля компании.",
+    "observations": [
+      {
+        "text": "Отрасль: металлургия",
+        "feature_ids": [
+          "company.sector"
+        ]
+      },
+      {
+        "text": "Регион: тестовый",
+        "feature_ids": [
+          "company.region"
+        ]
+      }
+    ],
+    "hypotheses": [],
+    "limitations": [
+      "Мок-провайдер; числовые показатели не изменяются."
+    ]
+  },
+  "synthetic": true,
+  "card": {
+    "summary": "Изменение ключевой ставки",
+    "blocks": {
+      "what": "Изменение ключевой ставки",
+      "why": "Отрасль: металлургия; Регион: тестовый",
+      "consequences": "Влияние на компанию требует проверки по указанным признакам и источникам.",
+      "actions": "Проверить актуальность источников и оценить влияние с ответственным сотрудником.",
+      "bank_view": "Нет данных аналитики банка.",
+      "basis": "Исходная новость, версия профиля и объяснение оценки релевантности."
+    },
+    "statements": [
+      {
+        "text": "Изменение ключевой ставки",
+        "layer": "fact",
+        "sources": [
+          "https://news.example.test/rate"
+        ],
+        "profile_features": []
+      },
+      {
+        "text": "Возможное влияние требует проверки с учётом признаков компании.",
+        "layer": "ai",
+        "sources": [
+          "https://news.example.test/rate"
+        ],
+        "profile_features": [
+          "company.sector",
+          "company.region"
+        ]
+      }
+    ],
+    "confidence": "low",
+    "limitations": [
+      "Синтетическая карточка мок-провайдера; не результат работы реальной модели."
+    ]
+  },
+  "check": {
+    "passed": true,
+    "reasons": []
+  }
+}

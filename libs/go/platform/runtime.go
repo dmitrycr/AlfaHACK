@@ -74,8 +74,17 @@ func Open(ctx context.Context) (*pgxpool.Pool, error) {
 	return p, nil
 }
 func Migrate(ctx context.Context, p *pgxpool.Pool, schema, sql string) error {
+	return MigrateAll(ctx, p, schema, []Migration{{Version: "001", SQL: sql}})
+}
+
+type Migration struct {
+	Version string
+	SQL     string
+}
+
+func MigrateAll(ctx context.Context, p *pgxpool.Pool, schema string, migrations []Migration) error {
 	switch schema {
-	case "auth", "company", "news", "events", "analytics":
+	case "auth", "company", "news", "events", "analytics", "agent", "insights":
 	default:
 		return errors.New("invalid migration schema")
 	}
@@ -90,22 +99,29 @@ func Migrate(ctx context.Context, p *pgxpool.Pool, schema, sql string) error {
 	if _, e = tx.Exec(ctx, "CREATE TABLE IF NOT EXISTS "+schema+".schema_migrations(version text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())"); e != nil {
 		return e
 	}
-	var checksum string
-	e = tx.QueryRow(ctx, "SELECT checksum FROM "+schema+".schema_migrations WHERE version='001'").Scan(&checksum)
-	if e == nil {
-		if checksum != Hash(sql) {
-			return errors.New("applied migration checksum changed")
+	previous := ""
+	for _, migration := range migrations {
+		if migration.Version <= previous || migration.Version == "" || strings.TrimSpace(migration.SQL) == "" {
+			return errors.New("migrations must have ordered unique versions and nonempty SQL")
 		}
-		return tx.Commit(ctx)
-	}
-	if !errors.Is(e, pgx.ErrNoRows) {
-		return e
-	}
-	if _, e = tx.Exec(ctx, sql); e != nil {
-		return e
-	}
-	if _, e = tx.Exec(ctx, "INSERT INTO "+schema+".schema_migrations(version,checksum) VALUES('001',$1)", Hash(sql)); e != nil {
-		return e
+		previous = migration.Version
+		var checksum string
+		e = tx.QueryRow(ctx, "SELECT checksum FROM "+schema+".schema_migrations WHERE version=$1", migration.Version).Scan(&checksum)
+		if e == nil {
+			if checksum != Hash(migration.SQL) {
+				return errors.New("applied migration checksum changed")
+			}
+			continue
+		}
+		if !errors.Is(e, pgx.ErrNoRows) {
+			return e
+		}
+		if _, e = tx.Exec(ctx, migration.SQL); e != nil {
+			return e
+		}
+		if _, e = tx.Exec(ctx, "INSERT INTO "+schema+".schema_migrations(version,checksum) VALUES($1,$2)", migration.Version, Hash(migration.SQL)); e != nil {
+			return e
+		}
 	}
 	return tx.Commit(ctx)
 }

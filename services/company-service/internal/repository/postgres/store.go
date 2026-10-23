@@ -19,11 +19,15 @@ type Store struct{ Pool *pgxpool.Pool }
 func (s Store) Company(ctx context.Context, id string) (model.Company, error) {
 	var c model.Company
 	var b []byte
-	e := s.Pool.QueryRow(ctx, "SELECT document FROM company.companies WHERE id=$1", id).Scan(&b)
+	var inn string
+	e := s.Pool.QueryRow(ctx, "SELECT document,COALESCE(inn,'') FROM company.companies WHERE id=$1", id).Scan(&b, &inn)
 	if e != nil {
 		return c, e
 	}
 	e = json.Unmarshal(b, &c)
+	if inn != "" {
+		c.INN = inn
+	}
 	return c, e
 }
 func (s Store) Profile(ctx context.Context, id string) (model.Profile, error) {
@@ -77,7 +81,7 @@ func (s Store) Seed(ctx context.Context) error {
 			loan = yes
 		}
 		revenue := int64(2_000_000_000_000)
-		c := model.Company{ID: d.id, Name: d.name, OKVED: model.OKVED{Section: d.section, Class: d.cls, Group: d.group}, Sector: d.sector, Region: d.region, RevenueMinor: &revenue, Products: map[string]*bool{"loan": &loan, "leasing": nil, "deposit": &no}, VED: map[string]any{"fts_flag": d.ved}}
+		c := model.Company{ID: d.id, Name: d.name, OKVED: &model.OKVED{Section: d.section, Class: d.cls, Group: d.group}, Sector: d.sector, Region: d.region, RevenueMinor: &revenue, Products: map[string]*bool{"loan": &loan, "leasing": nil, "deposit": &no}, VED: map[string]any{"fts_flag": d.ved}}
 		b, _ := json.Marshal(c)
 		if _, e := s.Pool.Exec(ctx, "INSERT INTO company.companies(id,document) VALUES($1,$2) ON CONFLICT DO NOTHING", c.ID, b); e != nil {
 			return e

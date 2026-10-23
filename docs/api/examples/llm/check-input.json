@@ -1,0 +1,148 @@
+{
+  "context": {
+    "company": {
+      "id": "company-test",
+      "name": "Синтетическая компания",
+      "okved": null,
+      "sector": "Металлургия",
+      "region": "Тестовый регион",
+      "products": {},
+      "ved": {}
+    },
+    "profile": {
+      "company_id": "company-test",
+      "version": 1,
+      "ruleset_version": "test-v1",
+      "channels": [],
+      "factor_exposure": {},
+      "coverage": null,
+      "built_at": "2026-10-23T10:00:00Z",
+      "synthetic": true
+    },
+    "prepared": {
+      "workflow_id": "",
+      "schema_version": "backend-llm-v1",
+      "event_version": 2,
+      "input_revision": 1,
+      "scope": "public",
+      "prompt_version": "tag-backend-v1",
+      "vocabulary_version": "ml-stage1-v1",
+      "provider_version": "mock-v1",
+      "synthetic": true,
+      "event": {
+        "event_id": "event-test",
+        "title": "Изменение ключевой ставки",
+        "summary": "Изменение ключевой ставки",
+        "sources": [
+          {
+            "url": "https://news.example.test/rate",
+            "name": "Синтетический источник",
+            "published_at": "2026-10-23T09:00:00Z",
+            "kind": "news"
+          }
+        ],
+        "type": "macro",
+        "sectors": [
+          "Финансы"
+        ],
+        "okved": [],
+        "companies": [],
+        "regions": [],
+        "factors": [
+          "ставка"
+        ],
+        "direction": "unclear",
+        "horizon": "short",
+        "importance": 4,
+        "collected_at": "2026-10-23T10:00:00Z"
+      }
+    },
+    "match": {
+      "company_id": "company-test",
+      "event_id": "event-test",
+      "profile_version": 1,
+      "event_version": 2,
+      "ruleset_version": "mock-match-v1",
+      "score": 0.5,
+      "breakdown": [
+        {
+          "channel": "industry",
+          "weight": 1,
+          "match": 0.5,
+          "contribution": 0.5
+        }
+      ],
+      "synthetic": true
+    },
+    "features": [
+      {
+        "id": "company.sector",
+        "text": "Отрасль: металлургия"
+      },
+      {
+        "id": "company.region",
+        "text": "Регион: тестовый"
+      }
+    ],
+    "bank": [],
+    "business_profile": {
+      "company_id": "company-test",
+      "profile_version": 1,
+      "summary": "Синтетическая интерпретация подготовленного профиля компании.",
+      "observations": [
+        {
+          "text": "Отрасль: металлургия",
+          "feature_ids": [
+            "company.sector"
+          ]
+        },
+        {
+          "text": "Регион: тестовый",
+          "feature_ids": [
+            "company.region"
+          ]
+        }
+      ],
+      "hypotheses": [],
+      "limitations": [
+        "Мок-провайдер; числовые показатели не изменяются."
+      ]
+    }
+  },
+  "card": {
+    "summary": "Изменение ключевой ставки",
+    "blocks": {
+      "what": "Изменение ключевой ставки",
+      "why": "Отрасль: металлургия; Регион: тестовый",
+      "consequences": "Влияние на компанию требует проверки по указанным признакам и источникам.",
+      "actions": "Проверить актуальность источников и оценить влияние с ответственным сотрудником.",
+      "bank_view": "Нет данных аналитики банка.",
+      "basis": "Исходная новость, версия профиля и объяснение оценки релевантности."
+    },
+    "statements": [
+      {
+        "text": "Изменение ключевой ставки",
+        "layer": "fact",
+        "sources": [
+          "https://news.example.test/rate"
+        ],
+        "profile_features": []
+      },
+      {
+        "text": "Возможное влияние требует проверки с учётом признаков компании.",
+        "layer": "ai",
+        "sources": [
+          "https://news.example.test/rate"
+        ],
+        "profile_features": [
+          "company.sector",
+          "company.region"
+        ]
+      }
+    ],
+    "confidence": "low",
+    "limitations": [
+      "Синтетическая карточка мок-провайдера; не результат работы реальной модели."
+    ]
+  }
+}

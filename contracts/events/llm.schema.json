@@ -1,0 +1,1319 @@
+{
+  "$defs": {
+    "LLMAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "insufficient_data": {
+          "type": "boolean"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sources": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "sources",
+        "insufficient_data",
+        "limitations"
+      ],
+      "type": "object"
+    },
+    "LLMBankExcerpt": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/LLMSource"
+        },
+        "synthetic": {
+          "type": "boolean"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "source",
+        "text",
+        "synthetic"
+      ],
+      "type": "object"
+    },
+    "LLMBlocks": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "type": "string"
+        },
+        "bank_view": {
+          "type": "string"
+        },
+        "basis": {
+          "type": "string"
+        },
+        "consequences": {
+          "type": "string"
+        },
+        "what": {
+          "type": "string"
+        },
+        "why": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "what",
+        "why",
+        "consequences",
+        "actions",
+        "bank_view",
+        "basis"
+      ],
+      "type": "object"
+    },
+    "LLMCall": {
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/LLMTagInput"
+            },
+            "task": {
+              "const": "tag"
+            }
+          }
+        },
+        {
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/LLMProfileInput"
+            },
+            "task": {
+              "const": "profile"
+            }
+          }
+        },
+        {
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/LLMInsightInput"
+            },
+            "task": {
+              "const": "insight"
+            }
+          }
+        },
+        {
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/LLMInsightInput"
+            },
+            "task": {
+              "const": "final"
+            }
+          }
+        },
+        {
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/LLMCheckInput"
+            },
+            "task": {
+              "const": "check"
+            }
+          }
+        },
+        {
+          "properties": {
+            "input": {
+              "$ref": "#/$defs/LLMChatInput"
+            },
+            "task": {
+              "const": "chat"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "input": {},
+        "scope": {
+          "type": "string"
+        },
+        "task": {
+          "enum": [
+            "tag",
+            "profile",
+            "insight",
+            "final",
+            "check",
+            "chat"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "task",
+        "scope",
+        "input"
+      ],
+      "type": "object"
+    },
+    "LLMCard": {
+      "additionalProperties": false,
+      "properties": {
+        "blocks": {
+          "$ref": "#/$defs/LLMBlocks"
+        },
+        "confidence": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "type": "string"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "statements": {
+          "items": {
+            "$ref": "#/$defs/LLMStatement"
+          },
+          "type": "array"
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "summary",
+        "blocks",
+        "statements",
+        "confidence",
+        "limitations"
+      ],
+      "type": "object"
+    },
+    "LLMChannel": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "sector": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "weight": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "weight",
+        "source",
+        "evidence"
+      ],
+      "type": "object"
+    },
+    "LLMChatInput": {
+      "additionalProperties": false,
+      "properties": {
+        "context": {
+          "$ref": "#/$defs/LLMInsightInput"
+        },
+        "history": {
+          "items": {
+            "$ref": "#/$defs/LLMMessage"
+          },
+          "type": "array"
+        },
+        "insight": {
+          "$ref": "#/$defs/LLMInsight"
+        },
+        "question": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "context",
+        "insight",
+        "history",
+        "question"
+      ],
+      "type": "object"
+    },
+    "LLMCheckInput": {
+      "additionalProperties": false,
+      "properties": {
+        "card": {
+          "$ref": "#/$defs/LLMCard"
+        },
+        "context": {
+          "$ref": "#/$defs/LLMInsightInput"
+        }
+      },
+      "required": [
+        "context",
+        "card"
+      ],
+      "type": "object"
+    },
+    "LLMCheckResult": {
+      "additionalProperties": false,
+      "properties": {
+        "passed": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "passed",
+        "reasons"
+      ],
+      "type": "object"
+    },
+    "LLMCompany": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "inn": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "okved": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMOKVED"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "products": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "object"
+        },
+        "region": {
+          "type": "string"
+        },
+        "revenue_minor": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sector": {
+          "type": "string"
+        },
+        "ved": {
+          "additionalProperties": {},
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "okved",
+        "sector",
+        "region",
+        "products",
+        "ved"
+      ],
+      "type": "object"
+    },
+    "LLMCompletion": {
+      "additionalProperties": false,
+      "properties": {
+        "business_profile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMProfileBrief"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cached": {
+          "type": "boolean"
+        },
+        "check": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMCheckResult"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "check_run_id": {
+          "type": "string"
+        },
+        "output": {},
+        "profile_run_id": {
+          "type": "string"
+        },
+        "prompt_version": {
+          "type": "string"
+        },
+        "provider_version": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "synthetic": {
+          "type": "boolean"
+        },
+        "workflow_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "output",
+        "cached",
+        "prompt_version",
+        "provider_version",
+        "synthetic",
+        "workflow_id"
+      ],
+      "type": "object"
+    },
+    "LLMContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "type": "string"
+        },
+        "contribution": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "match": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "weight": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "channel",
+        "weight",
+        "match",
+        "contribution"
+      ],
+      "type": "object"
+    },
+    "LLMFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "text"
+      ],
+      "type": "object"
+    },
+    "LLMInsight": {
+      "additionalProperties": false,
+      "properties": {
+        "business_profile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMProfileBrief"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "card": {
+          "$ref": "#/$defs/LLMCard"
+        },
+        "check": {
+          "$ref": "#/$defs/LLMCheckResult"
+        },
+        "check_run_id": {
+          "type": "string"
+        },
+        "company_id": {
+          "type": "string"
+        },
+        "event_id": {
+          "type": "string"
+        },
+        "event_version": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "profile_features": {
+          "items": {
+            "$ref": "#/$defs/LLMFeature"
+          },
+          "type": "array"
+        },
+        "profile_run_id": {
+          "type": "string"
+        },
+        "profile_version": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "ruleset_version": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/LLMSource"
+          },
+          "type": "array"
+        },
+        "synthetic": {
+          "type": "boolean"
+        },
+        "workflow_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "company_id",
+        "event_id",
+        "event_version",
+        "profile_version",
+        "ruleset_version",
+        "run_id",
+        "check_run_id",
+        "sources",
+        "profile_features",
+        "workflow_id",
+        "profile_run_id",
+        "synthetic",
+        "card",
+        "check"
+      ],
+      "type": "object"
+    },
+    "LLMInsightInput": {
+      "additionalProperties": false,
+      "properties": {
+        "bank": {
+          "items": {
+            "$ref": "#/$defs/LLMBankExcerpt"
+          },
+          "type": "array"
+        },
+        "business_profile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMProfileBrief"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "company": {
+          "$ref": "#/$defs/LLMCompany"
+        },
+        "features": {
+          "items": {
+            "$ref": "#/$defs/LLMFeature"
+          },
+          "type": "array"
+        },
+        "match": {
+          "$ref": "#/$defs/LLMMatch"
+        },
+        "prepared": {
+          "$ref": "#/$defs/LLMPrepared"
+        },
+        "profile": {
+          "$ref": "#/$defs/LLMProfile"
+        }
+      },
+      "required": [
+        "company",
+        "profile",
+        "prepared",
+        "match",
+        "features",
+        "bank"
+      ],
+      "type": "object"
+    },
+    "LLMMatch": {
+      "additionalProperties": false,
+      "properties": {
+        "breakdown": {
+          "items": {
+            "$ref": "#/$defs/LLMContribution"
+          },
+          "type": "array"
+        },
+        "company_id": {
+          "type": "string"
+        },
+        "event_id": {
+          "type": "string"
+        },
+        "event_version": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "profile_version": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "ruleset_version": {
+          "type": "string"
+        },
+        "score": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "synthetic": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "company_id",
+        "event_id",
+        "profile_version",
+        "event_version",
+        "ruleset_version",
+        "score",
+        "breakdown",
+        "synthetic"
+      ],
+      "type": "object"
+    },
+    "LLMMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "text"
+      ],
+      "type": "object"
+    },
+    "LLMOKVED": {
+      "additionalProperties": false,
+      "properties": {
+        "class": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "section": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "section",
+        "class",
+        "group"
+      ],
+      "type": "object"
+    },
+    "LLMPrepared": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "$ref": "#/$defs/LLMReadyEvent"
+        },
+        "event_version": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "input_revision": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "prompt_version": {
+          "type": "string"
+        },
+        "provider_version": {
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "backend-llm-v1",
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "synthetic": {
+          "type": "boolean"
+        },
+        "vocabulary_version": {
+          "const": "ml-stage1-v1",
+          "type": "string"
+        },
+        "workflow_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "workflow_id",
+        "schema_version",
+        "event_version",
+        "input_revision",
+        "scope",
+        "prompt_version",
+        "vocabulary_version",
+        "provider_version",
+        "synthetic",
+        "event"
+      ],
+      "type": "object"
+    },
+    "LLMProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "built_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "channels": {
+          "items": {
+            "$ref": "#/$defs/LLMChannel"
+          },
+          "type": "array"
+        },
+        "company_id": {
+          "type": "string"
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "factor_exposure": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": "object"
+        },
+        "ruleset_version": {
+          "type": "string"
+        },
+        "synthetic": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "company_id",
+        "version",
+        "ruleset_version",
+        "channels",
+        "factor_exposure",
+        "coverage",
+        "built_at",
+        "synthetic"
+      ],
+      "type": "object"
+    },
+    "LLMProfileBrief": {
+      "additionalProperties": false,
+      "properties": {
+        "company_id": {
+          "type": "string"
+        },
+        "hypotheses": {
+          "items": {
+            "$ref": "#/$defs/LLMProfileObservation"
+          },
+          "type": "array"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "observations": {
+          "items": {
+            "$ref": "#/$defs/LLMProfileObservation"
+          },
+          "type": "array"
+        },
+        "profile_version": {
+          "type": "integer"
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "company_id",
+        "profile_version",
+        "summary",
+        "observations",
+        "hypotheses",
+        "limitations"
+      ],
+      "type": "object"
+    },
+    "LLMProfileInput": {
+      "additionalProperties": false,
+      "properties": {
+        "company": {
+          "$ref": "#/$defs/LLMCompany"
+        },
+        "features": {
+          "items": {
+            "$ref": "#/$defs/LLMFeature"
+          },
+          "type": "array"
+        },
+        "profile": {
+          "$ref": "#/$defs/LLMProfile"
+        }
+      },
+      "required": [
+        "company",
+        "profile",
+        "features"
+      ],
+      "type": "object"
+    },
+    "LLMProfileObservation": {
+      "additionalProperties": false,
+      "properties": {
+        "feature_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "feature_ids"
+      ],
+      "type": "object"
+    },
+    "LLMReadyEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "collected_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "companies": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "direction": {
+          "enum": [
+            "positive",
+            "negative",
+            "unclear"
+          ],
+          "type": "string"
+        },
+        "event_id": {
+          "type": "string"
+        },
+        "factors": {
+          "items": {
+            "enum": [
+              "ставка",
+              "инфляция",
+              "USD",
+              "CNY",
+              "EUR",
+              "нефть",
+              "газ",
+              "сталь",
+              "уголь",
+              "удобрения",
+              "зерно",
+              "золото",
+              "тарифы",
+              "налоги",
+              "санкции",
+              "пошлины"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "horizon": {
+          "enum": [
+            "short",
+            "medium",
+            "long"
+          ],
+          "type": "string"
+        },
+        "importance": {
+          "maximum": 5,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "okved": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "regions": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sectors": {
+          "items": {
+            "enum": [
+              "Нефть и газ",
+              "Металлургия и добыча",
+              "Энергетика",
+              "Строительство",
+              "Недвижимость",
+              "Оптовая торговля",
+              "Розничная торговля",
+              "Автомобили",
+              "Транспорт и логистика",
+              "ИТ и телеком",
+              "Финансы",
+              "Агро и пищевая промышленность",
+              "Химия и удобрения",
+              "Машиностроение и промышленность",
+              "Услуги и прочее",
+              "Здравоохранение и социальная сфера"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/LLMSource"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 500,
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "regulation",
+            "macro",
+            "commodity",
+            "corporate",
+            "industry",
+            "regional",
+            "sanctions"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "title",
+        "summary",
+        "sources",
+        "type",
+        "sectors",
+        "okved",
+        "companies",
+        "regions",
+        "factors",
+        "direction",
+        "horizon",
+        "importance",
+        "collected_at"
+      ],
+      "type": "object"
+    },
+    "LLMSource": {
+      "additionalProperties": false,
+      "properties": {
+        "fragment_id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "news",
+            "bank_analytics"
+          ],
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "published_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2048,
+          "pattern": "^https?://",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "name",
+        "published_at",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "LLMStatement": {
+      "additionalProperties": false,
+      "properties": {
+        "layer": {
+          "enum": [
+            "fact",
+            "bank",
+            "ai"
+          ],
+          "type": "string"
+        },
+        "profile_features": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sources": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "layer",
+        "sources",
+        "profile_features"
+      ],
+      "type": "object"
+    },
+    "LLMTagInput": {
+      "additionalProperties": false,
+      "properties": {
+        "collected_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "event_id": {
+          "type": "string"
+        },
+        "input_revision": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/LLMSource"
+          },
+          "type": "array"
+        },
+        "text": {
+          "maxLength": 20000,
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 500,
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "input_revision",
+        "title",
+        "text",
+        "sources",
+        "collected_at"
+      ],
+      "type": "object"
+    },
+    "LLMTagResult": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMReadyEvent"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "ready",
+            "noise",
+            "insufficient_data"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "reason",
+        "event"
+      ],
+      "type": "object"
+    },
+    "LLMTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "cost_estimated": {
+          "type": "boolean"
+        },
+        "cost_minor": {
+          "type": "integer"
+        },
+        "cost_nano_rub": {
+          "type": "integer"
+        },
+        "duration_ms": {
+          "type": "integer"
+        },
+        "error_code": {
+          "type": "string"
+        },
+        "input_hash": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "prompt_version": {
+          "type": "string"
+        },
+        "reasoning_tokens": {
+          "type": "integer"
+        },
+        "reserved_nano_rub": {
+          "type": "integer"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "synthetic": {
+          "type": "boolean"
+        },
+        "task": {
+          "type": "string"
+        },
+        "tokens_in": {
+          "type": "integer"
+        },
+        "tokens_out": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "run_id",
+        "task",
+        "status",
+        "model",
+        "prompt_version",
+        "input_hash",
+        "tokens_in",
+        "tokens_out",
+        "cost_minor",
+        "cost_nano_rub",
+        "reserved_nano_rub",
+        "cost_estimated",
+        "reasoning_tokens",
+        "synthetic",
+        "duration_ms",
+        "error_code"
+      ],
+      "type": "object"
+    },
+    "LLMWorkflowStep": {
+      "additionalProperties": false,
+      "properties": {
+        "error_code": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "model",
+        "name",
+        "status",
+        "run_id",
+        "error_code"
+      ],
+      "type": "object"
+    },
+    "LLMWorkflowTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "attempts": {
+          "type": "integer"
+        },
+        "entity_id": {
+          "type": "string"
+        },
+        "error_code": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/LLMWorkflowStep"
+          },
+          "type": "array"
+        },
+        "task": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "id",
+        "task",
+        "status",
+        "attempts",
+        "error_code",
+        "steps"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:alfa:backend-llm:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

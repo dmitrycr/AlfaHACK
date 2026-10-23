@@ -3,7 +3,6 @@ package postgres
 import (
 	"alfa.local/company-service/migrations"
 	"alfa.local/shared/model"
-	"alfa.local/shared/platform"
 	"alfa.local/shared/testdb"
 	"context"
 	"errors"
@@ -14,7 +13,7 @@ import (
 func testStore(t *testing.T) Store {
 	p := testdb.Open(t, "company")
 	ctx := context.Background()
-	if e := platform.Migrate(ctx, p, "company", migrations.SQL); e != nil {
+	if e := migrations.Apply(ctx, p); e != nil {
 		t.Fatal(e)
 	}
 	s := Store{p}

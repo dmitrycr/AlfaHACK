@@ -34,7 +34,14 @@
           "type": "string"
         },
         "okved": {
-          "$ref": "#/$defs/OKVED"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OKVED"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "sector": {
           "type": "string"
@@ -57,6 +64,10 @@
         },
         "ved": {
           "type": "object"
+        },
+        "inn": {
+          "type": "string",
+          "pattern": "^[0-9]{10}$"
         }
       },
       "required": [
@@ -510,7 +521,9 @@
             "ingestion.failed",
             "event.prepared",
             "event.tagged",
-            "message.quarantined"
+            "message.quarantined",
+            "event.excluded",
+            "event.tagging_failed"
           ]
         },
         "entity_id": {

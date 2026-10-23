@@ -20,7 +20,7 @@ import urllib.parse
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-SERVICES = {"api-gateway": "auth", "company-service": "company", "news-service": "news", "event-service": "events", "analytics-service": "analytics"}
+SERVICES = {"api-gateway": "auth", "company-service": "company", "news-service": "news", "event-service": "events", "analytics-service": "analytics", "ai-agent-service": "agent", "insight-service": "insights"}
 
 
 def free_port():
@@ -69,13 +69,13 @@ def main():
             key = secrets.token_hex(32)
             demo_password = "DemoOnly-2026!"
             environments = {}
-            for name in ["company-service", "news-service", "event-service", "analytics-service", "api-gateway"]:
+            for name in ["company-service", "news-service", "ai-agent-service", "insight-service", "event-service", "analytics-service", "api-gateway"]:
                 http_port, rpc_port = addresses[name]
                 role, password = roles[name]
                 dsn = urllib.parse.urlunparse(("postgresql", f"{role}:{password}@{admin_url.hostname}:{admin_url.port or 5432}", "/" + database, "", "sslmode=disable", ""))
-                env = dict(os.environ, DATABASE_URL=dsn, INTERNAL_KEY=key, KAFKA_BROKERS=brokers, HTTP_ADDR=f"127.0.0.1:{http_port}", GRPC_ADDR=f"127.0.0.1:{rpc_port}", APP_ENV="test", SEED_DEMO="true", DEMO_PASSWORD=demo_password, SOURCE_MODE="fixture", COOKIE_SECURE="false", APP_ORIGIN=f"http://127.0.0.1:{addresses['api-gateway'][0]}")
+                env = dict(os.environ, DATABASE_URL=dsn, INTERNAL_KEY=key, KAFKA_BROKERS=brokers, HTTP_ADDR=f"127.0.0.1:{http_port}", GRPC_ADDR=f"127.0.0.1:{rpc_port}", APP_ENV="test", SEED_DEMO="true", DEMO_PASSWORD=demo_password, SOURCE_MODE="fixture", LLM_MODE="mock", LLM_MOCK_SCENARIO="success", MATCH_MODE="mock", COOKIE_SECURE="false", APP_ORIGIN=f"http://127.0.0.1:{addresses['api-gateway'][0]}")
                 env.pop("TEST_DATABASE_URL",None)
-                for variable, target in [("COMPANY_ADDR", "company-service"), ("NEWS_ADDR", "news-service"), ("EVENTS_ADDR", "event-service"), ("ANALYTICS_ADDR", "analytics-service")]:
+                for variable, target in [("COMPANY_ADDR", "company-service"), ("NEWS_ADDR", "news-service"), ("EVENTS_ADDR", "event-service"), ("ANALYTICS_ADDR", "analytics-service"), ("AI_ADDR", "ai-agent-service"), ("INSIGHTS_ADDR", "insight-service")]:
                     env[variable] = f"127.0.0.1:{addresses[target][1]}"
                 environments[name] = env
                 log = (work / (name + ".log")).open("w+")
@@ -114,7 +114,11 @@ def main():
                 subprocess.run([str(binaries["news-service"]), "collect"], env=env, stdout=subprocess.DEVNULL, check=True, timeout=60)
 
             try:
-                e2e.run(f"http://127.0.0.1:{addresses['api-gateway'][0]}", demo_password, collect)
+                def operator(args):
+                    result=subprocess.run([str(binaries["api-gateway"]),*args],env=environments["api-gateway"],capture_output=True,text=True,check=True,timeout=15)
+                    return json.loads(result.stdout)
+                subprocess.run([str(binaries["ai-agent-service"]), "prepare-profiles", "company-metal"], env=environments["ai-agent-service"], capture_output=True, check=True, timeout=15)
+                e2e.run(f"http://127.0.0.1:{addresses['api-gateway'][0]}", demo_password, collect, operator)
             except BaseException:
                 for name, log in logs.items():
                     log.flush()

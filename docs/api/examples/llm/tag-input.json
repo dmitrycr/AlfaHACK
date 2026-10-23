@@ -1,0 +1,15 @@
+{
+  "event_id": "event-test",
+  "input_revision": 1,
+  "title": "Изменение ключевой ставки",
+  "text": "Синтетическая новость о стоимости финансирования компаний.",
+  "sources": [
+    {
+      "url": "https://news.example.test/rate",
+      "name": "Синтетический источник",
+      "published_at": "2026-10-23T09:00:00Z",
+      "kind": "news"
+    }
+  ],
+  "collected_at": "2026-10-23T10:00:00Z"
+}

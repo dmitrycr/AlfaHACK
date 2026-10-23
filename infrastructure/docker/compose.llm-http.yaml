@@ -1,0 +1,8 @@
+# Opt-in egress for AI. Base Compose gives host access only to the gateway.
+services:
+  ai-agent-service:
+    networks:
+      - backend
+      - llm-egress
+networks:
+  llm-egress: {}

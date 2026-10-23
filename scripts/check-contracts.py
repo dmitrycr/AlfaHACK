@@ -33,5 +33,17 @@ def check_refs(node):
 check_refs(api)
 for name, component in api["components"]["schemas"].items():
     Draft202012Validator.check_schema(component)
+registration = json.loads((ROOT / "docs/api/examples/registration.json").read_text())
+Draft202012Validator(api["components"]["schemas"]["RegistrationInput"], format_checker=FormatChecker()).validate(registration)
 assert api["paths"]["/auth/login"]["post"]["security"] == []
-print("Contracts validated: OpenAPI references, JSON schemas, source configurations and profile example")
+llm_schema = json.loads((ROOT / "contracts/events/llm.schema.json").read_text())
+Draft202012Validator.check_schema(llm_schema)
+examples = {"profile-input":"LLMProfileInput","profile-brief":"LLMProfileBrief","tag-input":"LLMTagInput", "tag-result":"LLMTagResult", "prepared-event":"LLMPrepared",
+            "insight-context":"LLMInsightInput", "card":"LLMCard", "check-input":"LLMCheckInput",
+            "check-result":"LLMCheckResult", "insight":"LLMInsight", "chat-input":"LLMChatInput",
+            "chat-answer":"LLMAnswer", "match":"LLMMatch"}
+for filename, name in examples.items():
+    example = json.loads((ROOT / "docs/api/examples/llm" / (filename + ".json")).read_text())
+    Draft202012Validator(dict(llm_schema, **{"$ref":"#/$defs/" + name}), format_checker=FormatChecker()).validate(example)
+    Draft202012Validator({"$ref":"#/components/schemas/" + name, "components":api["components"]}, format_checker=FormatChecker()).validate(example)
+print("Contracts validated: OpenAPI, backend/source schemas, registration/profile and 13 LLM examples")

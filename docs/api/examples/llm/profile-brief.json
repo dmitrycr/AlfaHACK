@@ -1,0 +1,23 @@
+{
+  "company_id": "company-test",
+  "profile_version": 1,
+  "summary": "Синтетическая интерпретация подготовленного профиля компании.",
+  "observations": [
+    {
+      "text": "Отрасль: металлургия",
+      "feature_ids": [
+        "company.sector"
+      ]
+    },
+    {
+      "text": "Регион: тестовый",
+      "feature_ids": [
+        "company.region"
+      ]
+    }
+  ],
+  "hypotheses": [],
+  "limitations": [
+    "Мок-провайдер; числовые показатели не изменяются."
+  ]
+}
