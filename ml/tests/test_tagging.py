@@ -64,9 +64,16 @@ def test_sanitize_does_not_crash(bad):
 def test_find_companies_pik():
     found = find_companies("ПИК объявил о запуске нового проекта")
     assert {"name": "ПИК", "sector": "Строительство"} in found
-    assert find_companies("пик активности на рынке")[0]["name"] == "ПИК"           # без учёта регистра (ограничение ТЗ)
     assert find_companies("Лукойла и Газпрома") and find_companies("копик") == []   # падеж есть, границы слов соблюдены
     assert find_companies("") == []
+
+
+def test_short_aliases_only_exact_spelling():
+    assert find_companies("пик инфляции пришёлся на весну") == []                  # слово «пик» - не компания
+    assert find_companies("Пик инфляции пройден") == [] and find_companies("мтс и сбер") == []
+    assert find_companies("ПИК объявил о запуске") == [{"name": "ПИК", "sector": "Строительство"}]
+    assert [c["name"] for c in find_companies("МТС и Сбер повысили тарифы")] == ["МТС", "Сбербанк"]
+    assert find_companies("лукойл и газпром")                                      # длинные алиасы: без учёта регистра
 
 
 def test_find_companies_builtin_when_no_file(tmp_path, caplog):

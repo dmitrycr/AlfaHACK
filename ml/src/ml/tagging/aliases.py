@@ -1,6 +1,7 @@
 """Справочник алиасов компаний -> сектор. Формат config/aliases.yaml: `companies: {Имя: {sector, aliases: [...]}}`
 или список `- {name, aliases, sector}`. Если файла нет, используется встроенный список крупных компаний.
-find_companies(text) ищет алиасы без учёта регистра, с границами слов (допускается падежное окончание до 3 букв)."""
+find_companies(text) ищет алиасы с границами слов: длинные (от 5 символов) без учёта регистра и с падежным окончанием до 3 букв,
+короткие (до 4 символов) только в точном написании из справочника."""
 from __future__ import annotations
 
 import logging
@@ -40,7 +41,9 @@ _BUILTIN = {
 
 
 def _compile(alias: str) -> re.Pattern:
-    suffix = r"[а-яё]{0,3}" if re.search(r"[а-яё]{4,}", alias, re.I) else ""    # «Лукойла», но не «ПИКа» из ПИК
+    if len(alias) <= 4:                      # короткие алиасы (ПИК, МТС, Сбер): только точное написание, «пик» - не компания
+        return re.compile(r"(?<!\w)" + re.escape(alias) + r"(?!\w)")
+    suffix = r"[а-яё]{0,3}" if re.search(r"[а-яё]{4,}", alias, re.I) else ""    # «Лукойла»: падежное окончание
     return re.compile(r"(?<!\w)" + re.escape(alias) + suffix + r"(?!\w)", re.I | re.U)
 
 
