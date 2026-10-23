@@ -1,0 +1,47 @@
+{
+  "source_commit": "f9643d861be69f7893406d23e889a077e2a2f320",
+  "source_sha256_lf_utf8": "878488f7c7a523c15252c04f29a685e9172f94baa502b4c4bb5a99c6c5ffedbf",
+  "input_relations": 78,
+  "accepted_relations": 74,
+  "sectors": 16,
+  "excluded": [
+    {
+      "from_sector": "Строительство",
+      "to_sector": "Финансы",
+      "role": "demand",
+      "strength": 0.4,
+      "rationale": "ипотека и проектное финансирование покупателей",
+      "review_reason": "Финансирование покупателей не доказывает покупку строительной продукции банком."
+    },
+    {
+      "from_sector": "Автомобили",
+      "to_sector": "Финансы",
+      "role": "demand",
+      "strength": 0.4,
+      "rationale": "автокредиты покупателей",
+      "review_reason": "Автокредитование не является прямой покупкой автомобилей банком."
+    },
+    {
+      "from_sector": "Агро и пищевая промышленность",
+      "to_sector": "Транспорт и логистика",
+      "role": "demand",
+      "strength": 0.3,
+      "rationale": "экспортные перевозки",
+      "review_reason": "Экспортная перевозка — услуга для агрокомпании, а не покупка её продукции перевозчиком."
+    },
+    {
+      "from_sector": "Здравоохранение и социальная сфера",
+      "to_sector": "Финансы",
+      "role": "demand",
+      "strength": 0.3,
+      "rationale": "платные услуги и страхование",
+      "review_reason": "Страховое финансирование требует отдельной модели; покупатель услуги не установлен."
+    }
+  ],
+  "limitations": [
+    "Heuristic review, not empirical calibration.",
+    "No reverse edges or transitive closure.",
+    "Matrix fallback uses existing demand/supply channel budgets only.",
+    "Golden-set recall remains unmeasured."
+  ]
+}

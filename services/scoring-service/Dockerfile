@@ -11,6 +11,8 @@ RUN go build -trimpath -ldflags="-s -w" -o /out/app ./cmd/app
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -u 10001 appuser
 COPY --from=build /out/app /app
+COPY services/scoring-service/config/scoring.json /etc/alfa/scoring.json
+ENV SCORING_CONFIG=/etc/alfa/scoring.json
 COPY THIRD_PARTY_NOTICES /usr/share/licenses/alfa-insight/THIRD_PARTY_NOTICES
 COPY docs/licenses /usr/share/licenses/alfa-insight/dependencies
 USER appuser

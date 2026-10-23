@@ -1,0 +1,551 @@
+{
+  "ruleset_version": "f2-sector-matrix-v1",
+  "threshold": 0.15,
+  "threshold_min": 0.05,
+  "threshold_step": 0.05,
+  "min_events": 5,
+  "freshness_steps": [
+    {
+      "max_age_days": 1,
+      "weight": 1
+    },
+    {
+      "max_age_days": 3,
+      "weight": 0.8
+    },
+    {
+      "max_age_days": 7,
+      "weight": 0.5
+    },
+    {
+      "max_age_days": 14,
+      "weight": 0.3
+    },
+    {
+      "max_age_days": 9999,
+      "weight": 0.15
+    }
+  ],
+  "adjacent_weight": 0.25,
+  "adjacent_sectors": {},
+  "sector_relations": [
+    {
+      "from_sector": "Автомобили",
+      "to_sector": "Оптовая торговля",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "дилерская сеть"
+    },
+    {
+      "from_sector": "Автомобили",
+      "to_sector": "Машиностроение и промышленность",
+      "role": "supply",
+      "strength": 0.7,
+      "rationale": "комплектующие"
+    },
+    {
+      "from_sector": "Автомобили",
+      "to_sector": "Металлургия и добыча",
+      "role": "supply",
+      "strength": 0.6,
+      "rationale": "металл"
+    },
+    {
+      "from_sector": "Агро и пищевая промышленность",
+      "to_sector": "Оптовая торговля",
+      "role": "demand",
+      "strength": 0.6,
+      "rationale": "оптовая реализация"
+    },
+    {
+      "from_sector": "Агро и пищевая промышленность",
+      "to_sector": "Розничная торговля",
+      "role": "demand",
+      "strength": 0.8,
+      "rationale": "поставки в сети"
+    },
+    {
+      "from_sector": "Агро и пищевая промышленность",
+      "to_sector": "Машиностроение и промышленность",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "сельхозтехника"
+    },
+    {
+      "from_sector": "Агро и пищевая промышленность",
+      "to_sector": "Нефть и газ",
+      "role": "supply",
+      "strength": 0.4,
+      "rationale": "топливо"
+    },
+    {
+      "from_sector": "Агро и пищевая промышленность",
+      "to_sector": "Химия и удобрения",
+      "role": "supply",
+      "strength": 0.8,
+      "rationale": "удобрения и средства защиты"
+    },
+    {
+      "from_sector": "Здравоохранение и социальная сфера",
+      "to_sector": "Недвижимость",
+      "role": "supply",
+      "strength": 0.3,
+      "rationale": "аренда помещений"
+    },
+    {
+      "from_sector": "Здравоохранение и социальная сфера",
+      "to_sector": "Оптовая торговля",
+      "role": "supply",
+      "strength": 0.6,
+      "rationale": "закупка лекарств и оборудования"
+    },
+    {
+      "from_sector": "ИТ и телеком",
+      "to_sector": "Услуги и прочее",
+      "role": "demand",
+      "strength": 0.4,
+      "rationale": "корпоративные заказчики"
+    },
+    {
+      "from_sector": "ИТ и телеком",
+      "to_sector": "Финансы",
+      "role": "demand",
+      "strength": 0.6,
+      "rationale": "банки как заказчики ИТ"
+    },
+    {
+      "from_sector": "ИТ и телеком",
+      "to_sector": "Недвижимость",
+      "role": "supply",
+      "strength": 0.3,
+      "rationale": "аренда площадей"
+    },
+    {
+      "from_sector": "ИТ и телеком",
+      "to_sector": "Энергетика",
+      "role": "supply",
+      "strength": 0.3,
+      "rationale": "электроэнергия для ЦОД"
+    },
+    {
+      "from_sector": "Машиностроение и промышленность",
+      "to_sector": "Нефть и газ",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "оборудование для ТЭК"
+    },
+    {
+      "from_sector": "Машиностроение и промышленность",
+      "to_sector": "Строительство",
+      "role": "demand",
+      "strength": 0.4,
+      "rationale": "строительная техника"
+    },
+    {
+      "from_sector": "Машиностроение и промышленность",
+      "to_sector": "Транспорт и логистика",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "подвижной состав"
+    },
+    {
+      "from_sector": "Машиностроение и промышленность",
+      "to_sector": "Металлургия и добыча",
+      "role": "supply",
+      "strength": 0.8,
+      "rationale": "металлопрокат"
+    },
+    {
+      "from_sector": "Машиностроение и промышленность",
+      "to_sector": "Энергетика",
+      "role": "supply",
+      "strength": 0.4,
+      "rationale": "электроэнергия"
+    },
+    {
+      "from_sector": "Металлургия и добыча",
+      "to_sector": "Автомобили",
+      "role": "demand",
+      "strength": 0.6,
+      "rationale": "листовой прокат для кузовов"
+    },
+    {
+      "from_sector": "Металлургия и добыча",
+      "to_sector": "Машиностроение и промышленность",
+      "role": "demand",
+      "strength": 0.8,
+      "rationale": "металлопрокат для производства"
+    },
+    {
+      "from_sector": "Металлургия и добыча",
+      "to_sector": "Оптовая торговля",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "металлотрейдеры"
+    },
+    {
+      "from_sector": "Металлургия и добыча",
+      "to_sector": "Строительство",
+      "role": "demand",
+      "strength": 0.8,
+      "rationale": "арматура и металлоконструкции"
+    },
+    {
+      "from_sector": "Металлургия и добыча",
+      "to_sector": "Нефть и газ",
+      "role": "supply",
+      "strength": 0.4,
+      "rationale": "газ как топливо"
+    },
+    {
+      "from_sector": "Металлургия и добыча",
+      "to_sector": "Транспорт и логистика",
+      "role": "supply",
+      "strength": 0.6,
+      "rationale": "железнодорожные перевозки сырья и продукции"
+    },
+    {
+      "from_sector": "Металлургия и добыча",
+      "to_sector": "Энергетика",
+      "role": "supply",
+      "strength": 0.6,
+      "rationale": "электроэнергия для плавки"
+    },
+    {
+      "from_sector": "Недвижимость",
+      "to_sector": "Розничная торговля",
+      "role": "demand",
+      "strength": 0.6,
+      "rationale": "арендаторы торговых площадей"
+    },
+    {
+      "from_sector": "Недвижимость",
+      "to_sector": "Услуги и прочее",
+      "role": "demand",
+      "strength": 0.4,
+      "rationale": "арендаторы офисов"
+    },
+    {
+      "from_sector": "Недвижимость",
+      "to_sector": "Строительство",
+      "role": "supply",
+      "strength": 0.8,
+      "rationale": "подрядчики и застройщики"
+    },
+    {
+      "from_sector": "Недвижимость",
+      "to_sector": "Финансы",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "кредитование и ипотека"
+    },
+    {
+      "from_sector": "Нефть и газ",
+      "to_sector": "Оптовая торговля",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "оптовая реализация нефтепродуктов"
+    },
+    {
+      "from_sector": "Нефть и газ",
+      "to_sector": "Транспорт и логистика",
+      "role": "demand",
+      "strength": 0.7,
+      "rationale": "транспорт покупает топливо"
+    },
+    {
+      "from_sector": "Нефть и газ",
+      "to_sector": "Химия и удобрения",
+      "role": "demand",
+      "strength": 0.6,
+      "rationale": "нефтехимия покупает сырьё"
+    },
+    {
+      "from_sector": "Нефть и газ",
+      "to_sector": "Энергетика",
+      "role": "demand",
+      "strength": 0.6,
+      "rationale": "генерация закупает газ и мазут"
+    },
+    {
+      "from_sector": "Нефть и газ",
+      "to_sector": "Машиностроение и промышленность",
+      "role": "supply",
+      "strength": 0.6,
+      "rationale": "оборудование для добычи и переработки"
+    },
+    {
+      "from_sector": "Нефть и газ",
+      "to_sector": "Строительство",
+      "role": "supply",
+      "strength": 0.4,
+      "rationale": "строительство инфраструктуры"
+    },
+    {
+      "from_sector": "Нефть и газ",
+      "to_sector": "Транспорт и логистика",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "перевозка и трубопроводы"
+    },
+    {
+      "from_sector": "Оптовая торговля",
+      "to_sector": "Машиностроение и промышленность",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "поставки комплектующих"
+    },
+    {
+      "from_sector": "Оптовая торговля",
+      "to_sector": "Розничная торговля",
+      "role": "demand",
+      "strength": 0.8,
+      "rationale": "поставки в розничные сети"
+    },
+    {
+      "from_sector": "Оптовая торговля",
+      "to_sector": "Строительство",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "поставки стройматериалов"
+    },
+    {
+      "from_sector": "Оптовая торговля",
+      "to_sector": "Агро и пищевая промышленность",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "закупка продовольствия"
+    },
+    {
+      "from_sector": "Оптовая торговля",
+      "to_sector": "Металлургия и добыча",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "закупка металлопроката"
+    },
+    {
+      "from_sector": "Оптовая торговля",
+      "to_sector": "Транспорт и логистика",
+      "role": "supply",
+      "strength": 0.6,
+      "rationale": "логистика поставок"
+    },
+    {
+      "from_sector": "Розничная торговля",
+      "to_sector": "Агро и пищевая промышленность",
+      "role": "supply",
+      "strength": 0.8,
+      "rationale": "закупка продуктов"
+    },
+    {
+      "from_sector": "Розничная торговля",
+      "to_sector": "Недвижимость",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "аренда торговых площадей"
+    },
+    {
+      "from_sector": "Розничная торговля",
+      "to_sector": "Оптовая торговля",
+      "role": "supply",
+      "strength": 0.7,
+      "rationale": "закупка у дистрибьюторов"
+    },
+    {
+      "from_sector": "Розничная торговля",
+      "to_sector": "Транспорт и логистика",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "логистика"
+    },
+    {
+      "from_sector": "Строительство",
+      "to_sector": "Недвижимость",
+      "role": "demand",
+      "strength": 0.8,
+      "rationale": "девелоперы и покупатели жилья"
+    },
+    {
+      "from_sector": "Строительство",
+      "to_sector": "Машиностроение и промышленность",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "стройтехника и стройматериалы"
+    },
+    {
+      "from_sector": "Строительство",
+      "to_sector": "Металлургия и добыча",
+      "role": "supply",
+      "strength": 0.8,
+      "rationale": "арматура и прокат"
+    },
+    {
+      "from_sector": "Строительство",
+      "to_sector": "Оптовая торговля",
+      "role": "supply",
+      "strength": 0.6,
+      "rationale": "поставки стройматериалов"
+    },
+    {
+      "from_sector": "Строительство",
+      "to_sector": "Транспорт и логистика",
+      "role": "supply",
+      "strength": 0.4,
+      "rationale": "доставка материалов"
+    },
+    {
+      "from_sector": "Транспорт и логистика",
+      "to_sector": "Агро и пищевая промышленность",
+      "role": "demand",
+      "strength": 0.4,
+      "rationale": "перевозка зерна и продуктов"
+    },
+    {
+      "from_sector": "Транспорт и логистика",
+      "to_sector": "Металлургия и добыча",
+      "role": "demand",
+      "strength": 0.6,
+      "rationale": "перевозка грузов металлургов"
+    },
+    {
+      "from_sector": "Транспорт и логистика",
+      "to_sector": "Оптовая торговля",
+      "role": "demand",
+      "strength": 0.6,
+      "rationale": "перевозка товаров"
+    },
+    {
+      "from_sector": "Транспорт и логистика",
+      "to_sector": "Машиностроение и промышленность",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "подвижной состав и техника"
+    },
+    {
+      "from_sector": "Транспорт и логистика",
+      "to_sector": "Нефть и газ",
+      "role": "supply",
+      "strength": 0.7,
+      "rationale": "топливо"
+    },
+    {
+      "from_sector": "Услуги и прочее",
+      "to_sector": "Финансы",
+      "role": "demand",
+      "strength": 0.3,
+      "rationale": "услуги финансовым организациям"
+    },
+    {
+      "from_sector": "Услуги и прочее",
+      "to_sector": "Недвижимость",
+      "role": "supply",
+      "strength": 0.4,
+      "rationale": "аренда офисов"
+    },
+    {
+      "from_sector": "Финансы",
+      "to_sector": "Недвижимость",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "ипотека и кредиты девелоперам"
+    },
+    {
+      "from_sector": "Финансы",
+      "to_sector": "Строительство",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "кредитование застройщиков"
+    },
+    {
+      "from_sector": "Финансы",
+      "to_sector": "ИТ и телеком",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "ИТ-системы"
+    },
+    {
+      "from_sector": "Химия и удобрения",
+      "to_sector": "Агро и пищевая промышленность",
+      "role": "demand",
+      "strength": 0.8,
+      "rationale": "аграрии покупают удобрения"
+    },
+    {
+      "from_sector": "Химия и удобрения",
+      "to_sector": "Машиностроение и промышленность",
+      "role": "demand",
+      "strength": 0.4,
+      "rationale": "полимеры и материалы"
+    },
+    {
+      "from_sector": "Химия и удобрения",
+      "to_sector": "Оптовая торговля",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "оптовая реализация"
+    },
+    {
+      "from_sector": "Химия и удобрения",
+      "to_sector": "Нефть и газ",
+      "role": "supply",
+      "strength": 0.8,
+      "rationale": "газ и нефтехимическое сырьё"
+    },
+    {
+      "from_sector": "Химия и удобрения",
+      "to_sector": "Транспорт и логистика",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "перевозка продукции"
+    },
+    {
+      "from_sector": "Химия и удобрения",
+      "to_sector": "Энергетика",
+      "role": "supply",
+      "strength": 0.4,
+      "rationale": "электроэнергия"
+    },
+    {
+      "from_sector": "Энергетика",
+      "to_sector": "Машиностроение и промышленность",
+      "role": "demand",
+      "strength": 0.5,
+      "rationale": "промышленные потребители"
+    },
+    {
+      "from_sector": "Энергетика",
+      "to_sector": "Металлургия и добыча",
+      "role": "demand",
+      "strength": 0.6,
+      "rationale": "энергоёмкие потребители"
+    },
+    {
+      "from_sector": "Энергетика",
+      "to_sector": "Недвижимость",
+      "role": "demand",
+      "strength": 0.4,
+      "rationale": "коммунальные потребители"
+    },
+    {
+      "from_sector": "Энергетика",
+      "to_sector": "Машиностроение и промышленность",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "оборудование и ремонты"
+    },
+    {
+      "from_sector": "Энергетика",
+      "to_sector": "Металлургия и добыча",
+      "role": "supply",
+      "strength": 0.5,
+      "rationale": "уголь для генерации"
+    },
+    {
+      "from_sector": "Энергетика",
+      "to_sector": "Нефть и газ",
+      "role": "supply",
+      "strength": 0.8,
+      "rationale": "топливо для генерации"
+    }
+  ]
+}

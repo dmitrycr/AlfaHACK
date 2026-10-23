@@ -17,6 +17,7 @@ type Step struct {
 	Weight float64 `json:"weight"`
 }
 type Config struct {
+	SectorRelations []SectorRelation    `json:"sector_relations,omitempty"`
 	Version         string              `json:"ruleset_version"`
 	Threshold       float64             `json:"threshold"`
 	ThresholdMin    float64             `json:"threshold_min"`
@@ -27,12 +28,29 @@ type Config struct {
 	AdjacentSectors map[string][]string `json:"adjacent_sectors"`
 }
 
+// SectorRelation is directional: ToSector buys from (demand) or supplies (supply) FromSector.
+type SectorRelation struct {
+	FromSector string  `json:"from_sector"`
+	ToSector   string  `json:"to_sector"`
+	Role       string  `json:"role"`
+	Strength   float64 `json:"strength"`
+	Rationale  string  `json:"rationale"`
+}
+
 func DefaultConfig() Config {
 	return Config{Version: "f2-baseline-v1", Threshold: .15, ThresholdMin: .05, ThresholdStep: .05, MinEvents: 5,
 		Freshness: []Step{{1, 1}, {3, .8}, {7, .5}, {14, .3}, {9999, .15}}, AdjacentWeight: .25, AdjacentSectors: map[string][]string{}}
 }
 func unit(x float64) bool { return !math.IsNaN(x) && !math.IsInf(x, 0) && x >= 0 && x <= 1 }
 func (c Config) Validate() error {
+	seenRelations := map[string]bool{}
+	for _, r := range c.SectorRelations {
+		key := normalized(r.FromSector) + "\x00" + normalized(r.ToSector) + "\x00" + r.Role
+		if normalized(r.FromSector) == "" || normalized(r.ToSector) == "" || normalized(r.FromSector) == normalized(r.ToSector) || (r.Role != "demand" && r.Role != "supply") || !unit(r.Strength) || r.Strength == 0 || strings.TrimSpace(r.Rationale) == "" || seenRelations[key] {
+			return errors.New("invalid or duplicate sector relation")
+		}
+		seenRelations[key] = true
+	}
 	if strings.TrimSpace(c.Version) == "" || !unit(c.Threshold) || !unit(c.ThresholdMin) || c.ThresholdMin > c.Threshold || !unit(c.ThresholdStep) || c.ThresholdStep <= 0 || c.ThresholdStep < .001 || c.MinEvents < 1 || c.MinEvents > 100 || !unit(c.AdjacentWeight) || len(c.Freshness) == 0 {
 		return errors.New("invalid scoring configuration")
 	}
@@ -192,7 +210,16 @@ func (c Config) match(ch model.Channel, r Request, e Event, expand bool) (float6
 		}
 		return value, reason
 	case "demand", "supply":
-		return c.sectorMatch(ch.Sector, e.Tags.Sectors, expand)
+		value, reason := c.sectorMatch(ch.Sector, e.Tags.Sectors, expand)
+		if expand && value < 1 {
+			for _, relation := range c.SectorRelations {
+				candidate := c.AdjacentWeight * relation.Strength
+				if relation.Role == ch.Name && normalized(relation.FromSector) == normalized(r.Company.Sector) && contains(e.Tags.Sectors, relation.ToSector) && candidate > value {
+					value, reason = candidate, "sector_matrix:"+relation.Role+":"+relation.ToSector+":"+relation.Rationale
+				}
+			}
+		}
+		return value, reason
 	case "regional":
 		if contains(e.Regions, r.Company.Region) {
 			return 1, "region_exact"
@@ -284,7 +311,7 @@ func (c Config) score(r Request, e Event, expand bool) Item {
 		item.Score += row.Contribution
 		if row.Contribution > 0 {
 			matches = append(matches, key)
-			if row.Reason == "adjacent_sector" {
+			if row.Reason == "adjacent_sector" || strings.HasPrefix(row.Reason, "sector_matrix:") {
 				item.Expanded = true
 			}
 		}
@@ -339,7 +366,7 @@ func (c Config) Rank(r Request) (Result, error) {
 		out.Threshold = math.Max(c.ThresholdMin, math.Round((out.Threshold-c.ThresholdStep)*1e9)/1e9)
 	}
 	out.ThresholdLowered = out.Threshold < c.Threshold
-	if selected() < c.MinEvents && len(c.AdjacentSectors) > 0 {
+	if selected() < c.MinEvents && (len(c.AdjacentSectors) > 0 || len(c.SectorRelations) > 0) {
 		out.AdjacentExpanded = true
 		for i, e := range valid {
 			out.Items[i] = c.score(r, e, true)
@@ -360,7 +387,7 @@ func (c Config) Rank(r Request) (Result, error) {
 	}
 	if len(out.SelectedEventIDs) < c.MinEvents {
 		out.Warnings = append(out.Warnings, "fewer_than_min_events")
-		if len(c.AdjacentSectors) == 0 {
+		if len(c.AdjacentSectors) == 0 && len(c.SectorRelations) == 0 {
 			out.Warnings = append(out.Warnings, "adjacent_sector_matrix_not_configured")
 		}
 	}

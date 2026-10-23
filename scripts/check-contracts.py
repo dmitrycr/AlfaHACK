@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Validate checked-in contracts; requires jsonschema==4.25.1."""
 import json
+import subprocess
+import sys
 from pathlib import Path
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
+subprocess.run([sys.executable, str(ROOT / "tools/data/build_sector_rules.py"), "--check"], check=True)
 schema = json.loads((ROOT / "contracts/events/backend.schema.json").read_text())
 Draft202012Validator.check_schema(schema)
 source_schema = json.loads((ROOT / "contracts/events/sources.schema.json").read_text())
