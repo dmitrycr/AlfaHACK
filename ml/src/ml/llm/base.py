@@ -138,13 +138,71 @@ def estimate_tokens(text: str) -> int:
     return max(1, len(text) // 4)
 
 
+_STR = re.compile(r'"(?:\\.|[^"\\])*"')
+_TRAILING_COMMA = re.compile(r",(\s*[}\]])")
+_LEADING_ZERO = re.compile(r"(?<![\w.\-])0\d+(?![\w.])")       # 05 -> "05" (так модели пишут коды ОКВЭД)
+
+
+def _strip_comments(t: str) -> str:
+    """Убирает // и /* */ вне строк JSON."""
+    out, i, n, in_str = [], 0, len(t), False
+    while i < n:
+        c = t[i]
+        if in_str:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(t[i + 1])
+                i += 2
+                continue
+            in_str = c != '"'
+        elif c == '"':
+            in_str = True
+            out.append(c)
+        elif t.startswith("//", i):
+            j = t.find("\n", i)
+            i = n if j < 0 else j
+            continue
+        elif t.startswith("/*", i):
+            j = t.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+            continue
+        else:
+            out.append(c)
+        i += 1
+    return "".join(out)
+
+
+def _outside_strings(t: str, fn) -> str:
+    parts, pos = [], 0
+    for m in _STR.finditer(t):
+        parts += [fn(t[pos:m.start()]), m.group()]
+        pos = m.end()
+    parts.append(fn(t[pos:]))
+    return "".join(parts)
+
+
+def clean_json_text(text: str) -> str:
+    """Предобработка ответа модели перед json.loads: текст до первой { и после последней }, обёртка ```json,
+    комментарии // и /* */, висячие запятые, числа с ведущим нулём (05 -> "05"). Строки JSON не затрагиваются.
+    Валидация по схеме после этого остаётся строгой."""
+    a, b = text.find("{"), text.rfind("}")
+    t = text[a:b + 1] if 0 <= a < b else text.strip()
+    t = _strip_comments(t)
+    t = _outside_strings(t, lambda s: _TRAILING_COMMA.sub(r"\1", s))
+    return _outside_strings(t, lambda s: _LEADING_ZERO.sub(lambda m: f'"{m.group()}"', s))
+
+
 def parse_json(text: str, schema: type[BaseModel] | None) -> Any:
-    """JSON (допускается обёртка ```json) -> объект схемы или dict. ValueError, если не JSON или не по схеме."""
+    """JSON -> объект схемы или dict. Строгий json.loads; при ошибке - тот же разбор после clean_json_text.
+    ValueError, если не JSON или не по схеме."""
     t = text.strip()
     m = _FENCE.match(t)
     if m:
         t = m.group(1)
-    data = json.loads(t)
+    try:
+        data = json.loads(t)
+    except ValueError:
+        data = json.loads(clean_json_text(text))
     return schema.model_validate(data) if schema is not None else data
 
 
@@ -242,6 +300,7 @@ class LLMClient(ABC):
         self.models: dict[str, str] = llm["models"]
         self.prices: dict = llm.get("prices") or {}
         self.price_unit_tokens = float(llm.get("price_unit_tokens") or 1_000_000)   # цены в prices - за 1 млн токенов
+        self.raw_failures_path = resolve_path(llm["raw_failures_path"]) if llm.get("raw_failures_path") else None
         self.card_model_final: str = (llm.get("card_model_final") or "") if llm.get("final_run") else ""
         self.net_retries = int(llm.get("net_retries", 2))
         self.retry_pause_s = float(llm.get("retry_pause_s", 1.0))
@@ -307,14 +366,17 @@ class LLMClient(ABC):
             except ValueError as e:
                 err = str(e)[:300]
                 final = attempt == 1
+                self._record_failure(ctx, attempt, raw.text, err)
                 self.store.log_call(**ctx, tokens_in=raw.tokens_in, tokens_out=raw.tokens_out, duration_ms=ms,
                                     status="error" if final else "retry", cost_rub=cost, error=f"невалидный JSON: {err}",
                                     endpoint=raw.endpoint)
                 if final:
                     raise LLMFormatError(f"ответ модели {model} не прошёл проверку после повтора: {err}") from e
+                head = mask_secrets(raw.text[:300])
                 msgs = messages + [
                     {"role": "assistant", "content": raw.text},
-                    {"role": "user", "content": f"Ответ не прошёл проверку: {err}. Верни ТОЛЬКО валидный JSON по схеме, без пояснений."},
+                    {"role": "user", "content": f"Ответ не прошёл проверку: {err}. Начало твоего предыдущего ответа: {head!r}. "
+                                                "Верни ТОЛЬКО валидный JSON по схеме, без пояснений."},
                 ]
                 continue
             self.store.log_call(**ctx, tokens_in=raw.tokens_in, tokens_out=raw.tokens_out, duration_ms=ms,
@@ -323,6 +385,21 @@ class LLMClient(ABC):
                                  else json.dumps(result, ensure_ascii=False))
             return result
         raise AssertionError("unreachable")
+
+    def _record_failure(self, ctx: dict, attempt: int, raw_text: str, err: str) -> None:
+        """Сырой невалидный ответ модели -> JSONL (llm.raw_failures_path) для диагностики. Ключи sk-... маскируются."""
+        if not self.raw_failures_path:
+            return
+        run_id = ctx.get("run_id") or ""
+        row = {"ts": now_msk().isoformat(timespec="seconds"), "task": ctx.get("task"), "model": ctx.get("model"),
+               "event_id": run_id.split(":", 1)[-1] if run_id else None, "run_id": run_id, "attempt": attempt,
+               "error": mask_secrets(err), "raw": mask_secrets(raw_text)}
+        try:
+            self.raw_failures_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.raw_failures_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        except OSError as e:
+            log.warning("не удалось записать %s: %s", self.raw_failures_path, e)
 
     def _guard(self, ctx: dict) -> None:
         state = self.budget.state()

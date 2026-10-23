@@ -13,12 +13,18 @@ from .base import BudgetExceeded, LLMClient, LLMError, LLMNetworkError, RawRespo
 BUDGET_TEXT = "budget has been exceeded"        # искать в теле ответа без учёта регистра; код HTTP шлюза неизвестен
 
 
+class LLMHttpError(LLMError):
+    """Ответ 4xx (кроме 429): запрос отклонён шлюзом."""
+
+
 class HttpLLM(LLMClient):
     def __init__(self, cfg: dict, store: Store | None = None, client: httpx.Client | None = None):
         super().__init__(cfg, store)
         llm = cfg["llm"]
         self.base_url = (llm.get("base_url") or os.environ.get("LLM_BASE_URL", "")).rstrip("/")
         self.reserve_url = (llm.get("base_url_reserve") or os.environ.get("LLM_BASE_URL_RESERVE", "")).rstrip("/")
+        self.json_mode = bool(llm.get("json_mode", True))       # response_format json_object; шлюз может не принять
+        self._no_json_mode: set[str] = set()                    # модели, для которых шлюз ответил 4xx
         self.disable_reasoning = set(llm.get("disable_reasoning") or [])
         self.disable_reasoning_param: dict = llm.get("disable_reasoning_param") or {}
         key = os.environ.get("LLM_API_KEY", "")
@@ -59,7 +65,7 @@ class HttpLLM(LLMClient):
         if r.status_code == 429:
             raise LLMNetworkError("HTTP 429")
         if r.status_code >= 400:
-            raise LLMError(f"HTTP {r.status_code}: {r.text[:200]}")
+            raise LLMHttpError(f"HTTP {r.status_code}: {r.text[:200]}")
         try:
             return r.json()
         except ValueError:
@@ -70,7 +76,19 @@ class HttpLLM(LLMClient):
         body: dict = {"model": model, "messages": messages, "temperature": 0}
         if model in self.disable_reasoning:
             body.update(self.disable_reasoning_param)         # TODO(align): формат параметра у шлюза не известен
-        data, endpoint = self._request("POST", "/chat/completions", json=body)
+        if schema is not None and self.json_mode and model not in self._no_json_mode:
+            body["response_format"] = {"type": "json_object"}
+        try:
+            data, endpoint = self._request("POST", "/chat/completions", json=body)
+        except LLMHttpError as e:
+            if "response_format" not in body:
+                raise
+            del body["response_format"]                    # шлюз не принял response_format: повтор без него, не падаем
+            data, endpoint = self._request("POST", "/chat/completions", json=body)
+            self._no_json_mode.add(model)
+            note = f"response_format json_object не принят шлюзом для {model} ({str(e)[:80]}), отключён"
+            log.warning(note)
+            self.store.log_call(run_id=None, task=task, model=model, prompt_version=None, status="note", error=note)
         try:
             text = data["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError):

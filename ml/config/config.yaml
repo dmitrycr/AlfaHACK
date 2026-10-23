@@ -21,6 +21,8 @@ llm:
     profile_hypothesis: qwen/qwen3.6-35b-a3b
     fallback: deepseek/deepseek-v4.1-flash
   card_model_final: moonshotai/kimi-k2.6   # модель карточек для финального прогона
+  json_mode: true            # response_format {"type": "json_object"}; при 4xx шлюза отключается для модели без падения
+  raw_failures_path: out/raw_failures.jsonl   # сырые невалидные ответы модели (диагностика), пусто = не писать
   final_run: false           # true = карточки идут на card_model_final вместо models.card
   cheap_model: google/gemma-4-26b-a4b-it   # режим деградации
   daily_limit_rub: 500

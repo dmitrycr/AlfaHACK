@@ -1,5 +1,5 @@
 """Прогон тегирования по файлу событий: таблица, итоги и out/tags.jsonl.
-Использование: LLM_MODE=mock python scripts/run_tagging.py --input tests/fixtures/news_30.json [--out out/tags.jsonl] [--store PATH]"""
+Использование: LLM_MODE=mock python scripts/run_tagging.py --input tests/fixtures/news_30.json [--out out/tags.jsonl] [--store PATH] [--only evt_011,evt_015]"""
 import _bootstrap  # noqa: F401
 import argparse
 import json
@@ -19,10 +19,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--input", required=True)
     ap.add_argument("--out", default="out/tags.jsonl")
     ap.add_argument("--store", help="SQLite-файл кеша (по умолчанию paths.store из config.yaml)")
+    ap.add_argument("--only", help="только эти event_id через запятую (остальные события не обрабатываются)")
     args = ap.parse_args(argv)
 
     cfg = load_config(overrides={"paths": {"store": args.store}}) if args.store else get_config()
     events = json.loads(resolve_path(args.input, Path.cwd()).read_text(encoding="utf-8"))
+    if args.only:
+        wanted = {x.strip() for x in args.only.split(",") if x.strip()}
+        events = [e for e in events if e["event_id"] in wanted]
+        if missing := wanted - {e["event_id"] for e in events}:
+            print(f"нет в файле: {', '.join(sorted(missing))}", file=sys.stderr)
     tagger = Tagger(build_tagging_llm(cfg), cfg)
     store = tagger.llm.store
     last_id = max((j["id"] for j in store.journal()), default=0)
@@ -55,8 +61,11 @@ def main(argv: list[str] | None = None) -> int:
         print("  ".join(c.ljust(w) for c, w in zip(line, widths)).rstrip())
 
     journal = store.journal(last_id)
-    valid = sum(1 for j in journal if j["status"] == "ok" and not j["cached"])
-    invalid = sum(1 for j in journal if (j["error"] or "").startswith("невалидный JSON"))
+    first = {}                                        # первая попытка по каждому событию (сеть и бюджет не считаем)
+    for j in journal:
+        if not j["cached"] and j["run_id"] and (not j["error"] or j["error"].startswith("невалидный JSON")):
+            first.setdefault(j["run_id"], j)
+    valid = sum(1 for j in first.values() if j["status"] == "ok")
     out = resolve_path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
@@ -65,7 +74,8 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"\nпромпт: {PROMPT_VERSION}; режим: {cfg['llm']['mode']}; результат: {out}")
     print(f"событий: {len(results)}; вызовов LLM: {tagger.llm.api_calls - calls0}; "
-          f"валидных JSON: {100 * valid / (valid + invalid):.0f}%" if valid + invalid else
+          f"валидных JSON с первой попытки: {valid} из {len(first)} ({100 * valid / len(first):.0f}%); "
+          f"после повтора без Event: {sum(r.event is None for _, r in results)}" if first else
           f"событий: {len(results)}; вызовов LLM: 0 (всё из кеша или без вызова)")
     print(f"помечено шумом: {sum(r.is_noise for _, r in results)}; без Event: {sum(r.event is None for _, r in results)}; "
           f"подозрительных: {sum(r.suspicious for _, r in results)}; расход: {sum(j['cost_rub'] for j in journal):.2f} ₽")

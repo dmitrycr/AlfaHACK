@@ -24,7 +24,7 @@ FX = Path(__file__).parent / "fixtures"
 @pytest.fixture
 def cfg(tmp_path):
     return load_config(overrides={
-        "llm": {"mode": "mock", "retry_pause_s": 0},
+        "llm": {"mode": "mock", "retry_pause_s": 0, "raw_failures_path": str(tmp_path / "raw_failures.jsonl")},
         "paths": {"bank_chunks": str(tmp_path / "chunks.jsonl"), "profiles": str(tmp_path / "no_profiles.json"),
                   "store": str(tmp_path / "store.sqlite")}})
 

@@ -6,7 +6,8 @@ from datetime import datetime, timezone
 import httpx
 import pytest
 
-from ml.llm.base import MSK, Budget, budget_day, compare_spend, mask_secrets, next_reset, parse_key_info
+from ml.llm.base import (MSK, Budget, budget_day, clean_json_text, compare_spend, mask_secrets, next_reset, parse_json,
+                         parse_key_info)
 from ml.llm import (INVALID, BudgetExceeded, DegradedMode, HttpLLM, LLMError, LLMFormatError, LLMNetworkError, MockLLM,
                     Store, build_llm, cache_key)
 from ml.schemas import EventTags
@@ -234,7 +235,7 @@ def test_primary_ok_uses_primary_and_no_switch_on_4xx(cfg, monkeypatch):
     assert llm.store.journal()[0]["endpoint"] == "primary"
     with pytest.raises(LLMError, match="HTTP 400"):
         llm.complete("tagging", [{"role": "user", "content": "x"}], EventTags)
-    assert hosts == ["main.test", "main.test"]
+    assert hosts == ["main.test"] * 3          # 4xx: ещё один заход без response_format, на резерв не уходим
 
 
 def test_both_endpoints_down_switches_once_per_request(cfg, monkeypatch):
@@ -400,3 +401,90 @@ def test_old_store_migrates(tmp_path):
     st = Store(old)
     st.log_call(run_id=None, task="t", model="m", prompt_version=None, endpoint="reserve")
     assert st.journal()[0]["endpoint"] == "reserve"
+
+
+# ---- устойчивый разбор JSON ----------------------------------------------------------------------------------
+
+GOOD = {"event_id": "e", "title": "t", "type": "макро", "importance": 3}
+
+
+@pytest.mark.parametrize("raw", [
+    '```json\n{"event_id": "e", "title": "t", "type": "макро", "importance": 3}\n```',                  # обёртка
+    'Вот ответ:\n{"event_id": "e", "title": "t", "type": "макро", "importance": 3}\nГотово.',            # текст вокруг
+    '{"event_id": "e", // комментарий с "кавычкой\n "title": "t", "type": "макро", "importance": 3}',     # //
+    '{"event_id": "e", /* блок */ "title": "t", "type": "макро", "importance": 3}',                       # /* */
+    '{"event_id": "e", "title": "t", "type": "макро", "importance": 3,}',                                  # висячая запятая
+    '```json\n{"event_id": "e", "title": "t", "type": "макро", "importance": 3,\n}\n``` пояснение',       # всё сразу
+])
+def test_tolerant_parse_accepts_noisy_json(raw):
+    assert parse_json(raw, EventTags).importance == 3
+
+
+def test_tolerant_parse_leaves_strings_alone_and_fixes_leading_zero():
+    raw = '{"u": "http://a//b, ]", "t": "x /* y */ ,}", "okved": [05, 10, 0.5, "07",], "n": 1}'
+    assert parse_json(raw, None) == {"u": "http://a//b, ]", "t": "x /* y */ ,}", "okved": ["05", 10, 0.5, "07"], "n": 1}
+    assert clean_json_text('{"a": 1}') == '{"a": 1}'
+
+
+def test_tolerant_parse_validation_stays_strict():
+    for raw in ("не json совсем", '{"event_id": "e", "title": "t", "type": "макро", "importance": 99}', "[1, 2]", '{"a": }'):
+        with pytest.raises(ValueError):
+            parse_json(raw, EventTags)
+
+
+def test_noisy_answer_accepted_without_retry(cfg):
+    llm = MockLLM(cfg, scenario=["```json\n" + json.dumps(GOOD) + "\n```"])
+    assert llm.complete("tagging", MSG, EventTags).importance == 3 and llm.calls == 1
+
+
+def test_retry_message_has_error_and_head_of_previous_answer(cfg):
+    bad = "{" + "x" * 400                                            # длиннее 300 символов
+    llm = MockLLM(cfg, scenario=[bad, None])
+    llm.complete("tagging", MSG, EventTags)
+    last = llm.requests[1][-1]["content"]
+    assert "не прошёл проверку" in last and "x" * 299 in last and "x" * 300 not in last
+
+
+def test_raw_failures_jsonl_written_and_masked(cfg):
+    llm = MockLLM(cfg, scenario=["сломано sk-leak-777 {", "снова {"])
+    with pytest.raises(LLMFormatError):
+        llm.complete("tagging", MSG, EventTags, run_id="tag:evt_011")
+    rows = [json.loads(line) for line in llm.raw_failures_path.read_text(encoding="utf-8").splitlines()]
+    assert [(r["event_id"], r["attempt"], r["task"], r["model"]) for r in rows] == [
+        ("evt_011", 0, "tagging", "google/gemma-4-26b-a4b-it"), ("evt_011", 1, "tagging", "google/gemma-4-26b-a4b-it")]
+    assert "sk-leak-777" not in json.dumps(rows) and "sk-***" in rows[0]["raw"]
+
+
+def test_response_format_sent_and_disabled_on_4xx_without_failing(cfg, monkeypatch, caplog):
+    bodies = []
+
+    def handler(req):
+        bodies.append(json.loads(req.content))
+        if "response_format" in bodies[-1]:
+            return httpx.Response(400, text="unsupported parameter: response_format")
+        return ok_response()
+
+    llm = http_llm(cfg, monkeypatch, handler)
+    with caplog.at_level(logging.WARNING, logger="ml.llm"):
+        assert llm.complete("tagging", MSG, EventTags).importance == 3
+        llm.complete("tagging", MSG + [{"role": "user", "content": "ещё"}], EventTags)
+    assert bodies[0]["response_format"] == {"type": "json_object"} and "response_format" not in bodies[1]
+    assert len(bodies) == 3 and "response_format" not in bodies[2]             # после отказа больше не просим
+    assert bodies[0]["temperature"] == 0
+    assert any(j["status"] == "note" and "response_format" in j["error"] for j in llm.store.journal())
+    assert "отключён" in caplog.text
+
+
+def test_response_format_kept_when_gateway_accepts(cfg, monkeypatch):
+    bodies = []
+    llm = http_llm(cfg, monkeypatch, lambda req: (bodies.append(json.loads(req.content)), ok_response())[1])
+    llm.complete("tagging", MSG, EventTags)
+    llm.call_raw("google/gemma-4-26b-a4b-it", MSG)                              # без схемы формат не запрашиваем
+    assert "response_format" in bodies[0] and "response_format" not in bodies[1]
+
+
+def test_tagging_prompt_has_no_comments_and_ends_with_json_only_line():
+    from ml.tagging.tagger import PROMPT_PATH
+    text = PROMPT_PATH.read_text(encoding="utf-8")
+    assert "//" not in text and "/*" not in text
+    assert text.rstrip().endswith("Верни только JSON, без пояснений и без комментариев")
