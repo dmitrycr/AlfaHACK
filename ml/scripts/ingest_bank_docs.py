@@ -39,7 +39,8 @@ def main(argv: list[str] | None = None) -> int:
     for d in rep.documents:
         flag = " [устарел]" if d.get("stale") else ""
         print(f"{d['document'][:48]:48} {d['pages']:>4} {d['chars']:>9} {d['cyr_share']:>8.2f} {d['chunks']:>6}  "
-              f"OCR {len(d['ocr_pages'])}; коротких {len(d['short_pages'])}: {d['short_pages']}{flag}")
+              f"OCR {len(d['ocr_pages'])}; коротких {len(d['short_pages'])}: {d['short_pages']}; "
+              f"шум: -{d['noise_dropped']} строк, -{d['pseudo_removed']} псевдослов{flag}")
     for name in rep.skipped:
         print(f"  пропущен (нет текста): {name}")
     print(rep.message)

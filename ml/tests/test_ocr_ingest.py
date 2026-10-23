@@ -189,32 +189,53 @@ def test_fixture_documents_without_meta_keep_old_behaviour(tmp_path):
 
 
 # ---------- чистка шума OCR ----------
-def test_noise_lines_axis_labels_and_garbage_are_dropped_tables_are_kept():
-    from ml.knowledge.ingest import drop_noise_lines, is_noise_line
-    noise = ["100 2100 12,5 95 1900", "14.01.2026 14.02.2026 14.03.2026", "0,40 0,35 0,30 0,25", "Я Я о ,, 12 1.", "-2,5% -2,0% -1,5% -1,0%", "2K21 1K21 4K20"]
-    kept = ["Об-рот розн.торг., % г/г 4,1% 3,6% 5,4% 2,2%", "Ticker Revenue %. QoQ EBITDA 2332 +35% 1119 +58%",
-            "Реал. зарплаты, % г/г 5,2% 8,7% 6,3% 8,6%", "Ставка 14,0% на конец 2026 г.", "Источники: ЦБ, Минфин, МосБиржа, Альфа-Банк",
-            "Янв.26 Фев.26 Мар.26 Апр.26", "Рис. 1: Продажи автомобилей", ""]
-    assert all(is_noise_line(s) for s in noise), [s for s in noise if not is_noise_line(s)]
-    assert not any(is_noise_line(s) for s in kept), [s for s in kept if is_noise_line(s)]
-    text = "\n".join(["Ставка 14,0% сохранена.", "100 2100 12,5 95 1900", "", "Инфляция замедлилась.", "0,40 0,35 0,30"])
-    clean, dropped = drop_noise_lines(text)
-    assert clean.split("\n") == ["Ставка 14,0% сохранена.", "", "Инфляция замедлилась."]
-    assert dropped == ["100 2100 12,5 95 1900", "0,40 0,35 0,30"] and "\n\n" in clean          # абзацы сохранены
+def test_table_header_with_months_and_gdp_row_are_kept():
+    from ml.knowledge.noise import clean_ocr_text, keep_reason
+    keep = ["Янв.26 Фев.26 Мар.26 Апр.26 Май.26 Июн.26 Июл.26 Авг.26П", "2025 1П26 3К26 7М26", "ВВП 0,3%", "ИПЦ 6,3% г/г", "ЦБ 14,0%",
+            "USD 87,0 12,5", "1,5 2,0 п.п.", "3,1 б.п. 4,2", "12,4 млрд 5,1 млн", "Курс 87 руб. 14,5", "Реал. зарплаты, % г/г 5,2% 8,7% 6,3%"]
+    for line in keep:
+        c = clean_ocr_text(line)
+        assert c.text == line and not c.dropped, (line, keep_reason(line))
 
 
-def test_ocr_noise_is_dropped_on_read_but_cache_keeps_raw_text(tmp_path):
+def test_pure_numeric_noise_and_percent_axes_are_dropped():
+    from ml.knowledge.noise import clean_ocr_text
+    noise = ["100 2100 12,5 95 1900", "14.01.2026 14.02.2026 14.03.2026", "0,40 0,35 0,30 0,25", "-2,5% -2,0% -1,5% -1,0%", "21%",
+             "105", "| 0,20", "1 00 &.. , | |"]
+    for line in noise:
+        c = clean_ocr_text(line)
+        assert c.dropped == [line.strip()] and c.text == "", line
+
+
+def test_pseudo_words_are_cut_from_line_but_line_stays_and_real_terms_survive():
+    from ml.knowledge.noise import clean_ocr_text, is_pseudo_word
+    c = clean_ocr_text("Ставка выросла узязязяяяяя чачачаччаанчачачанаячаачан до 14,0%")
+    assert c.text == "Ставка выросла до 14,0%" and c.removed == ["узязязяяяяя", "чачачаччаанчачачанаячаачан"] and c.dropped == []
+    for real in ("флоутеры", "проинфляционных", "МосБиржа", "РусГидро", "Атомэнергопром", "дезинфляционными"):    # нет в словаре pymorphy, но не мусор
+        assert not is_pseudo_word(real), real
+    assert not is_pseudo_word("ВВПИПЦЦБРФ") and not is_pseudo_word("RUOOOAAAAAA") and not is_pseudo_word("узязя")       # аббревиатура, латиница, короткое
+    assert not is_pseudo_word("узязязя9яяяя")                                                                        # с цифрой не трогаем
+    only_garbage = clean_ocr_text("узязязяяяяя\nСтавка 14%")
+    assert only_garbage.dropped == ["узязязяяяяя"] and only_garbage.text == "Ставка 14%"                            # строка из одного псевдослова пустеет и уходит
+
+
+def test_noise_cleaning_keeps_paragraph_breaks_and_cache_stays_raw(tmp_path):
+    from ml.knowledge.noise import clean_ocr_text
+    c = clean_ocr_text("Ставка 14,0% сохранена.\n100 2100 12,5 95 1900\n\nИнфляция замедлилась.\n0,40 0,35 0,30")
+    assert c.text.split("\n") == ["Ставка 14,0% сохранена.", "", "Инфляция замедлилась."]
+    assert c.dropped == ["100 2100 12,5 95 1900", "0,40 0,35 0,30"]
     src = tmp_path / "b"
     src.mkdir()
     scan_pdf(src / "Chart.pdf", 1)
-    raw = "Доходность ОФЗ выросла после заседания ЦБ.\r\n100 2100 12,5 95 1900\r\n14.01.2026 14.02.2026\r\nКлючевая ставка 14,0%."
+    raw = ("Доходность ОФЗ выросла после заседания ЦБ.\r\n100 2100 12,5 95 1900\r\n14.01.2026 14.02.2026\r\n"
+           "Янв.26 Фев.26 Мар.26\r\nКлючевая ставка 14,0% узязязяяяяя.")
     out = tmp_path / "c.jsonl"
     rep = ingest_dir(src, out, ocr=FakeOCR([raw]))
     text = chunks_of(out)[0]["text"]
-    assert "2100" not in text and "Доходность ОФЗ" in text and "Ключевая ставка 14,0%" in text
-    assert rep.documents[0]["noise_dropped"] == 2
+    assert "2100" not in text and "Доходность ОФЗ" in text and "Янв.26 Фев.26 Мар.26" in text and "узязязяяяяя" not in text
+    assert rep.documents[0]["noise_dropped"] == 2 and rep.documents[0]["pseudo_removed"] == 1
     cached = (tmp_path / "b_text" / "Chart" / "1.txt").read_text(encoding="utf-8")
-    assert "100 2100 12,5 95 1900" in cached                                                  # кеш OCR не изменяется
+    assert "100 2100 12,5 95 1900" in cached and "узязязяяяяя" in cached                    # кеш OCR не изменяется
 
 
 # ---------- множитель stale ----------

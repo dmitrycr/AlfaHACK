@@ -27,6 +27,12 @@ def stem(word: str) -> str:
     return word
 
 
+def is_known_word(word: str) -> bool:
+    """Слово известно словарю pymorphy3 (без словаря считаем известными слова от 4 букв)."""
+    w = word.lower().replace("ё", "е")
+    return len(w) >= 4 if _MORPH is None else bool(_MORPH.word_is_known(w))
+
+
 @lru_cache(maxsize=50_000)
 def _lemma(word: str, use_morph: bool) -> str:
     if use_morph and _MORPH is not None and re.search(r"[а-яё]", word):

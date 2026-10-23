@@ -15,6 +15,7 @@ from pathlib import Path
 import yaml
 
 from .chunker import chunk_text
+from .noise import clean_ocr_text
 from .retriever import Chunk
 
 log = logging.getLogger("ml.knowledge")
@@ -82,32 +83,6 @@ def _pdftotext(path: Path) -> list[str]:
     return out.decode("utf-8", "replace").split("\f")
 
 
-_ALPHA_RUN = re.compile(r"[^\W\d_]+")
-
-
-def is_noise_line(line: str) -> bool:
-    """Подпись оси или мусор графика: букв меньше половины непробельных символов и нет слова длиннее 3 букв.
-    Таблицы с числами и осмысленными словами (есть слово из 4+ букв или букв не меньше половины) остаются."""
-    s = "".join(line.split())
-    if not s:
-        return False
-    letters = sum(ch.isalpha() for ch in s)
-    longest = max((len(w) for w in _ALPHA_RUN.findall(line)), default=0)
-    return letters / len(s) < 0.5 and longest <= 3
-
-
-def drop_noise_lines(text: str) -> tuple[str, list[str]]:
-    """Убирает строки-шум (is_noise_line) из текста страницы после OCR; пустые строки (границы абзацев) сохраняются.
-    Возвращает (очищенный текст, отброшенные строки). Применяется при чтении, сам кеш OCR не меняется."""
-    kept, dropped = [], []
-    for line in text.split("\n"):
-        if is_noise_line(line):
-            dropped.append(line.strip())
-        else:
-            kept.append(line)
-    return "\n".join(kept), dropped
-
-
 SHORT_PAGE_CHARS = 100          # страница короче: скорее всего график или таблица, OCR почти ничего не дал
 
 
@@ -171,14 +146,16 @@ def extract_pages(path: Path, ocr=None, text_dir: Path | None = None, force_ocr:
     pages = [normalize(p) for p in pages]
     ocr_done: list[int] = []
     noise: list[tuple[int, str]] = []
+    pseudo: list[tuple[int, str]] = []
     if ocr is not None and n_pdf is not None and path.suffix.lower() == ".pdf":
         empty = [i for i, p in enumerate(pages) if not p]
         if empty:
             got = _ocr_pages(path, empty, ocr, text_dir, force_ocr)
             for i, text in got.items():
-                clean, dropped = drop_noise_lines(text)
-                pages[i] = normalize(clean)
-                noise += [(i + 1, line) for line in dropped]
+                cleaned = clean_ocr_text(text)
+                pages[i] = normalize(cleaned.text)
+                noise += [(i + 1, line) for line in cleaned.dropped]
+                pseudo += [(i + 1, tok) for tok in cleaned.removed]
             ocr_done = [i + 1 for i in sorted(got)]
     while pages and not pages[-1]:                              # хвостовой \f после последней страницы
         pages.pop()
@@ -186,6 +163,7 @@ def extract_pages(path: Path, ocr=None, text_dir: Path | None = None, force_ocr:
         stats["ocr_pages"] = [p for p in ocr_done if p <= len(pages)]
         stats["short_pages"] = [i for i, p in enumerate(pages, 1) if len(p) < SHORT_PAGE_CHARS]
         stats["noise_lines"] = noise                            # [(страница, строка)] отброшено как шум графиков
+        stats["pseudo_words"] = pseudo                          # [(страница, токен)] вырезано из строк
     return pages if any(pages) else []
 
 
@@ -266,7 +244,7 @@ def build_chunks(path: Path, lo: int, hi: int, overlap: int, ocr=None, text_dir:
     return chunks, {"document": document, "pages": len(pages), "chunks": len(chunks), "published_at": published.isoformat(),
                     "date_source": source, "chars": chars, "cyr_share": round(cyr / (cyr + lat), 3) if cyr + lat else 0.0,
                     "ocr_pages": stats["ocr_pages"], "short_pages": stats["short_pages"], "stale": stale,
-                    "noise_dropped": len(stats["noise_lines"])}
+                    "noise_dropped": len(stats["noise_lines"]), "pseudo_removed": len(stats["pseudo_words"])}
 
 
 def ingest_dir(src: str | Path, out: str | Path, lo: int = 500, hi: int = 800, overlap: int = 100, *, ocr=None,
