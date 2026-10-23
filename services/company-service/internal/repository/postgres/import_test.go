@@ -6,8 +6,11 @@ import (
 	"alfa.local/shared/platform"
 	"alfa.local/shared/testdb"
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/jackc/pgx/v5"
+	"os"
+	"reflect"
 	"testing"
 )
 
@@ -56,5 +59,48 @@ func TestImportIsAtomicAndIdempotent(t *testing.T) {
 	}
 	if _, e = p.Company(ctx, c2.ID); !errors.Is(e, pgx.ErrNoRows) {
 		t.Fatal("partial company survived", e)
+	}
+}
+
+func TestImportAndReplacePreserveMLFeatures(t *testing.T) {
+	store := testStore(t)
+	ctx := context.Background()
+	b, err := os.ReadFile("../../../../../docs/api/examples/profile-features.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var profile model.Profile
+	if err = json.Unmarshal(b, &profile); err != nil {
+		t.Fatal(err)
+	}
+	company, err := store.Company(ctx, "company-metal")
+	if err != nil {
+		t.Fatal(err)
+	}
+	company.ID = profile.CompanyID
+	yes := true
+	company.Products["zpp"] = &yes
+	if err = store.Import(ctx, []model.Company{company}, []model.Profile{profile}); err != nil {
+		t.Fatal(err)
+	}
+	if err = store.Import(ctx, []model.Company{company}, []model.Profile{profile}); err != nil {
+		t.Fatal("reimport", err)
+	}
+	got, err := store.Profile(ctx, company.ID)
+	if err != nil || !reflect.DeepEqual(profile.Features, got.Features) {
+		t.Fatal("features lost in database", err)
+	}
+	gotCompany, err := store.Company(ctx, company.ID)
+	if err != nil || gotCompany.Products["zpp"] == nil || !*gotCompany.Products["zpp"] {
+		t.Fatal("product lost", err)
+	}
+	profile.Version++
+	profile.Features.Buyers = nil
+	if err = store.Replace(ctx, profile); err != nil {
+		t.Fatal(err)
+	}
+	got, err = store.Profile(ctx, company.ID)
+	if err != nil || got.Version != 2 || got.Features == nil || got.Features.Buyers != nil {
+		t.Fatal("replacement lost", err)
 	}
 }

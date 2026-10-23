@@ -87,6 +87,7 @@ runs/
 /infrastructure/**/data/
 /infrastructure/**/volumes/
 /backups/
+/tools/data/data/
 *.dump
 *.sql.gz
 

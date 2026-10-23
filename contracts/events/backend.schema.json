@@ -161,6 +161,16 @@
         },
         "synthetic": {
           "type": "boolean"
+        },
+        "features": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProfileFeatures"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -944,6 +954,103 @@
         "excerpt"
       ],
       "additionalProperties": false
+    },
+    "ProfileFeatures": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "buyers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SideFeatures"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suppliers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SideFeatures"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "SideFeatures": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sector_shares"
+      ],
+      "properties": {
+        "sector_shares": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "$ref": "#/$defs/SectorShare"
+          }
+        },
+        "concentration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Concentration"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "SectorShare": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sector",
+        "share"
+      ],
+      "properties": {
+        "sector": {
+          "type": "string",
+          "minLength": 1
+        },
+        "share": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "Concentration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "top1_share",
+        "top5_share",
+        "hhi"
+      ],
+      "properties": {
+        "top1_share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "top5_share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "hhi": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
     }
   },
   "$ref": "#/$defs/Envelope"

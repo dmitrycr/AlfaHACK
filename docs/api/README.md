@@ -1,5 +1,7 @@
 # Контракты бэкенда
 
+[Подключение ML-профилей и поля features](company-profile-integration.md).
+
 OpenAPI 3.1: `contracts/openapi/backend.yaml` (JSON-совместимый YAML).
 Работающий шлюз отдаёт тот же документ по `/openapi.json`.
 Внутренние методы: `contracts/proto/v1/backend.proto`.

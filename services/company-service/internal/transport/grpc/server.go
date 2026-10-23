@@ -1,9 +1,11 @@
 package transport
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 
 	"alfa.local/company-service/internal/repository/postgres"
 	"alfa.local/company-service/internal/service"
@@ -17,7 +19,13 @@ import (
 
 type Server struct {
 	rpc.UnimplementedCompanyServiceServer
-	Store postgres.Store
+	Store ProfileStore
+}
+
+type ProfileStore interface {
+	Company(context.Context, string) (model.Company, error)
+	Profile(context.Context, string) (model.Profile, error)
+	Replace(context.Context, model.Profile) error
 }
 
 func response(v any, e error) (*rpc.Response, error) {
@@ -27,7 +35,10 @@ func response(v any, e error) (*rpc.Response, error) {
 	if e != nil {
 		return nil, status.Error(codes.Internal, "storage unavailable")
 	}
-	b, _ := json.Marshal(v)
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "invalid stored document")
+	}
 	return &rpc.Response{Payload: b}, nil
 }
 func (s *Server) GetCompany(ctx context.Context, r *rpc.Request) (*rpc.Response, error) {
@@ -52,8 +63,13 @@ func (s *Server) ReplaceProfile(ctx context.Context, r *rpc.Request) (*rpc.Respo
 		return nil, status.Error(codes.PermissionDenied, "service credentials required")
 	}
 	var p model.Profile
-	if e := json.Unmarshal(r.Payload, &p); e != nil {
+	decoder := json.NewDecoder(bytes.NewReader(r.Payload))
+	decoder.DisallowUnknownFields()
+	if e := decoder.Decode(&p); e != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid JSON")
+	}
+	if e := decoder.Decode(new(any)); e != io.EOF {
+		return nil, status.Error(codes.InvalidArgument, "unexpected JSON tail")
 	}
 	if p.CompanyID != r.CompanyId {
 		return nil, status.Error(codes.PermissionDenied, "company mismatch")

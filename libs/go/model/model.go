@@ -38,6 +38,27 @@ type Profile struct {
 	Coverage       *float64            `json:"coverage"`
 	BuiltAt        time.Time           `json:"built_at"`
 	Synthetic      bool                `json:"synthetic"`
+	Features       *ProfileFeatures    `json:"features,omitempty"`
+}
+
+// ProfileFeatures contains aggregate ML features, never individual payments.
+// A nil side means insufficient data, not zero exposure.
+type ProfileFeatures struct {
+	Buyers    *SideFeatures `json:"buyers"`
+	Suppliers *SideFeatures `json:"suppliers"`
+}
+type SideFeatures struct {
+	SectorShares  []SectorShare  `json:"sector_shares"`
+	Concentration *Concentration `json:"concentration"`
+}
+type SectorShare struct {
+	Sector string   `json:"sector"`
+	Share  *float64 `json:"share"`
+}
+type Concentration struct {
+	Top1Share *float64 `json:"top1_share"`
+	Top5Share *float64 `json:"top5_share"`
+	HHI       *float64 `json:"hhi"`
 }
 type Article struct {
 	ID             string     `json:"id"`

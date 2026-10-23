@@ -42,7 +42,7 @@ func ReadImport(companies io.Reader, profiles io.Reader) ([]model.Company, []mod
 	}
 	positions := map[string]int{}
 	allowed := map[string]bool{}
-	for _, name := range []string{"id", "name", "okved_section", "okved_class", "okved_group", "sector", "region", "revenue_minor", "loan", "leasing", "deposit", "fts_flag", "fts_country"} {
+	for _, name := range []string{"id", "name", "okved_section", "okved_class", "okved_group", "sector", "region", "revenue_minor", "rko", "guarantee", "loan", "leasing", "deposit", "zpp", "factoring", "fts_flag", "fts_country"} {
 		allowed[name] = true
 	}
 	for i, name := range header {
@@ -80,7 +80,7 @@ func ReadImport(companies io.Reader, profiles io.Reader) ([]model.Company, []mod
 			return ""
 		}
 		c := model.Company{ID: get("id"), Name: get("name"), OKVED: model.OKVED{Section: get("okved_section"), Class: get("okved_class"), Group: get("okved_group")}, Sector: get("sector"), Region: get("region"), Products: map[string]*bool{}, VED: map[string]any{"country": get("fts_country")}}
-		for _, key := range []string{"loan", "leasing", "deposit", "fts_flag"} {
+		for _, key := range []string{"rko", "guarantee", "loan", "leasing", "deposit", "zpp", "factoring", "fts_flag"} {
 			value := get(key)
 			var flag *bool
 			if value != "" {

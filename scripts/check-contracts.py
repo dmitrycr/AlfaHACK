@@ -15,6 +15,8 @@ for name in ("sources.json", "sources-updated.json"):
 example = json.loads((ROOT / "docs/api/examples/profile.json").read_text())
 profile_schema = dict(schema, **{"$ref": "#/$defs/Profile"})
 Draft202012Validator(profile_schema, format_checker=FormatChecker()).validate(example)
+features_example = json.loads((ROOT / "docs/api/examples/profile-features.json").read_text(encoding="utf-8"))
+Draft202012Validator(profile_schema, format_checker=FormatChecker()).validate(features_example)
 api = json.loads((ROOT / "contracts/openapi/backend.yaml").read_text())
 
 def check_refs(node):
@@ -31,6 +33,8 @@ def check_refs(node):
             check_refs(value)
 
 check_refs(api)
+api_profile = dict(api, **{"$ref": "#/components/schemas/Profile"})
+Draft202012Validator(api_profile, format_checker=FormatChecker()).validate(features_example)
 for name, component in api["components"]["schemas"].items():
     Draft202012Validator.check_schema(component)
 assert api["paths"]["/auth/login"]["post"]["security"] == []

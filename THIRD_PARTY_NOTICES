@@ -5,6 +5,11 @@ Alfa Insight backend iteration 0.1.0. All news fixtures, company examples and de
 credentials are synthetic. No real news feeds, bank documents, case datasets or
 LLM models are bundled or called by this iteration.
 
+Offline data tools added under tools/data use NumPy 2.3.5 (BSD-3-Clause)
+and pandas 3.0.1 (BSD-3-Clause). Full distribution license notices are included
+under docs/licenses/python/numpy-2.3.5-LICENSE.txt and pandas-3.0.1-LICENSE.
+Dependency binaries and real case datasets are not bundled in the repository.
+
 Go module inventory
 -------------------
 Inventory includes the selected module graph, including test/tool dependencies.
