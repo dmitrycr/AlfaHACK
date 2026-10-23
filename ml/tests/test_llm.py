@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import httpx
 import pytest
 
-from ml.llm.base import MSK, Budget, budget_day, mask_secrets, next_reset
+from ml.llm.base import MSK, Budget, budget_day, compare_spend, mask_secrets, next_reset, parse_key_info
 from ml.llm import (INVALID, BudgetExceeded, DegradedMode, HttpLLM, LLMError, LLMFormatError, LLMNetworkError, MockLLM,
                     Store, build_llm, cache_key)
 from ml.schemas import EventTags
@@ -358,9 +358,40 @@ def test_disable_reasoning_param_only_for_listed_models(cfg, monkeypatch):
     assert "reasoning" in bodies[0] and "reasoning" not in bodies[1]
 
 
-def test_key_info_and_old_store_migrates(cfg, monkeypatch, tmp_path):
-    llm = http_llm(cfg, monkeypatch, lambda req: httpx.Response(200, json={"data": {"remaining": 123.5}}))
-    assert llm.key_info() == {"data": {"remaining": 123.5}} and MockLLM(cfg).key_info() is None
+KEY_INFO = {"key": "sk-live-abc123", "info": {"spend": 12.5, "max_budget": 500.0, "budget_duration": "1d",
+                                                "budget_reset_at": "2026-10-24T00:00:00+00:00"}}
+
+
+def test_key_info_goes_to_host_root_without_v1(cfg, monkeypatch):
+    seen = []
+
+    def handler(req):
+        seen.append(str(req.url))
+        if req.url.host == "main.test":
+            return httpx.Response(503)                              # резерв тоже без /v1
+        return httpx.Response(200, json=KEY_INFO)
+
+    llm = http_llm(cfg, monkeypatch, handler)
+    assert llm.key_info() == KEY_INFO and MockLLM(cfg).key_info() is None
+    assert seen == ["http://main.test/key/info", "http://reserve.test/key/info"]
+    llm.list_models()
+    assert seen[-1] == "http://main.test/v1/models" or seen[-1] == "http://reserve.test/v1/models"
+
+
+def test_parse_key_info_remaining_and_reset_in_msk():
+    info = parse_key_info(KEY_INFO)
+    assert (info["spend"], info["max_budget"], info["remaining"]) == (12.5, 500.0, 487.5)
+    assert info["reset_at"] == at(2026, 10, 24, 3, 0) and info["reset_at"].utcoffset().total_seconds() == 3 * 3600
+    assert "key" not in info and parse_key_info({"info": {"spend": 1}}) is None and parse_key_info({}) is None
+
+
+def test_compare_spend_verdicts():
+    assert "совпадает" in compare_spend(0.0011, 0.001)
+    assert "1 тыс." in compare_spend(1.0, 0.001) and "НЕ совпадает" in compare_spend(1.0, 0.001)
+    assert "сравнить нельзя" in compare_spend(0, 0.001) and "сравнить нельзя" in compare_spend(0.1, 0)
+
+
+def test_old_store_migrates(tmp_path):
     old = tmp_path / "old.sqlite"
     with sqlite3.connect(old) as c:
         c.execute("CREATE TABLE llm_calls (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, day TEXT NOT NULL, run_id TEXT,"

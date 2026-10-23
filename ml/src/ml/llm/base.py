@@ -55,6 +55,34 @@ class _MaskFilter(logging.Filter):
 log.addFilter(_MaskFilter())
 
 
+def parse_key_info(data: dict) -> dict | None:
+    """Ответ /key/info {"key": ..., "info": {"spend", "max_budget", "budget_reset_at", ...}} -> spend, max_budget, remaining,
+    reset_at (МСК). Поле "key" не читается. None, если spend/max_budget нет."""
+    info = (data or {}).get("info") or {}
+    spend, limit = info.get("spend"), info.get("max_budget")
+    if not isinstance(spend, (int, float)) or not isinstance(limit, (int, float)):
+        return None
+    reset = None
+    if info.get("budget_reset_at"):
+        try:
+            reset = datetime.fromisoformat(str(info["budget_reset_at"]).replace("Z", "+00:00")).astimezone(MSK)
+        except ValueError:
+            pass
+    return {"spend": float(spend), "max_budget": float(limit), "remaining": float(limit) - float(spend), "reset_at": reset}
+
+
+def compare_spend(gateway_drop: float, our_rub: float) -> str:
+    """Сверка роста spend у шлюза с нашей оценкой: вывод о единице тарифа."""
+    if our_rub <= 0 or gateway_drop <= 0:
+        return "сравнить нельзя: расход шлюза или наша оценка равны нулю (учёт у шлюза может идти с задержкой)"
+    ratio = gateway_drop / our_rub
+    if 0.5 <= ratio <= 2:
+        return f"шлюз/наш = {ratio:.3g}: совпадает по порядку величины, единица тарифа верна"
+    return (f"шлюз/наш = {ratio:.3g}: НЕ совпадает, шлюз считает единицу иначе"
+            + (" (похоже на цены за 1 тыс. токенов)" if 500 <= ratio <= 2000 else "")
+            + ("; spend может быть не в ₽" if ratio < 0.5 or ratio > 2000 else ""))
+
+
 def now_msk() -> datetime:
     return datetime.now(MSK)
 
@@ -213,7 +241,7 @@ class LLMClient(ABC):
         llm = cfg["llm"]
         self.models: dict[str, str] = llm["models"]
         self.prices: dict = llm.get("prices") or {}
-        self.price_unit_tokens = float(llm.get("price_unit_tokens") or 1_000_000)   # TODO(align): единица не подтверждена
+        self.price_unit_tokens = float(llm.get("price_unit_tokens") or 1_000_000)   # цены в prices - за 1 млн токенов
         self.card_model_final: str = (llm.get("card_model_final") or "") if llm.get("final_run") else ""
         self.net_retries = int(llm.get("net_retries", 2))
         self.retry_pause_s = float(llm.get("retry_pause_s", 1.0))
@@ -232,7 +260,7 @@ class LLMClient(ABC):
         return None
 
     def key_info(self) -> dict | None:
-        """Остаток бюджета ключа (GET {base}/key/info); None, если узнать нельзя."""
+        """Ответ GET {host}/key/info (адрес без /v1); None, если узнать нельзя. Разбор: parse_key_info."""
         return None
 
     def model_for(self, task: str) -> str:

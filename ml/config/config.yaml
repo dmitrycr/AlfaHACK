@@ -26,7 +26,7 @@ llm:
   daily_limit_rub: 500
   degrade_at: 0.8
   cache_only_at: 0.95
-  price_unit_tokens: 1000000  # TODO(align): организаторы не подтвердили, что цена дана «за 1 млн токенов»; проверить check_llm.py
+  price_unit_tokens: 1000000  # цены в prices даны за 1 млн токенов (подтверждено организаторами)
   prices:                    # ₽ за price_unit_tokens токенов; токены рассуждений оплачиваются по цене выхода
     z-ai/glm-5.3-flash: {in: 5.10, out: 17.00}
     deepseek/deepseek-v4.1-flash: {in: 10.00, out: 21.00}

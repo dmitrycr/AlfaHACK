@@ -1,6 +1,7 @@
 """Проверка LLM-доступа: GET /key/info (остаток бюджета), GET /models и пробный запрос «Ответь одним словом: ок»
 к каждой модели из конфига, затем снова /key/info: на сколько упал остаток и сколько посчитал наш клиент.
-Цель: выяснить, работает ли один ключ для всех моделей, и проверить единицу тарифа (llm.price_unit_tokens).
+Цель: выяснить, работает ли один ключ для всех моделей, и сверить расход: рост spend у шлюза и наша оценка.
+/key/info лежит в корне хоста (без /v1). Поле "key" из ответа не печатается.
 Ключ не печатается (только «задан / не задан»).
 Использование: LLM_MODE=mock python scripts/check_llm.py   |   LLM_MODE=http LLM_BASE_URL=... LLM_API_KEY=... python scripts/check_llm.py"""
 import _bootstrap  # noqa: F401
@@ -13,6 +14,7 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
 
 from ml.config import get_config
 from ml.llm import LLMError, build_llm
+from ml.llm.base import compare_spend, parse_key_info
 
 PROMPT = [{"role": "user", "content": "Ответь одним словом: ок"}]
 
@@ -23,48 +25,33 @@ def models_from_config(cfg: dict) -> list[str]:
     return list(dict.fromkeys(names))
 
 
-def numeric_fields(obj, prefix: str = "") -> dict[str, float]:
-    """Все числовые значения ответа /key/info: {"путь.к.полю": число}. TODO(align): формат ответа неизвестен."""
-    out: dict[str, float] = {}
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            out.update(numeric_fields(v, f"{prefix}{k}."))
-    elif isinstance(obj, list):
-        for i, v in enumerate(obj):
-            out.update(numeric_fields(v, f"{prefix}{i}."))
-    elif isinstance(obj, (int, float)) and not isinstance(obj, bool):
-        out[prefix.rstrip(".")] = float(obj)
-    return out
-
-
-def read_key_info(client) -> dict[str, float] | None:
+def read_key_info(client) -> dict | None:
     try:
-        info = client.key_info()
+        raw = client.key_info()
     except LLMError as e:
         print(f"GET /key/info: ошибка: {e}")
         return None
-    if info is None:
+    if raw is None:
         print("GET /key/info: недоступен")
         return None
-    return numeric_fields(info)
+    info = parse_key_info(raw)
+    if info is None:
+        print("GET /key/info: нет info.spend / info.max_budget")
+    return info
 
 
-def print_balance(title: str, fields: dict[str, float]) -> None:
-    print(f"{title}: поля ответа /key/info (формат не подтверждён, TODO(align))")
-    for name, val in fields.items():
-        print(f"  {name} = {val:g}")
+def print_balance(title: str, info: dict) -> None:
+    reset = info["reset_at"]
+    print(f"{title}: остаток {info['remaining']:.4f} = max_budget {info['max_budget']:g} - spend {info['spend']:.4f}; "
+          f"сброс {reset:%d.%m.%Y %H:%M} МСК" if reset else
+          f"{title}: остаток {info['remaining']:.4f} = max_budget {info['max_budget']:g} - spend {info['spend']:.4f}")
 
 
-def print_balance_drop(before: dict[str, float], after: dict[str, float], our_rub: float) -> None:
-    print(f"\nнаш клиент посчитал стоимость проверки: {our_rub:.6f} ₽ (price_unit_tokens по config)")
-    changed = {k: before[k] - after[k] for k in before if k in after and before[k] != after[k]}
-    if not changed:
-        print("остаток по /key/info не изменился (возможно, учёт с задержкой): единицу тарифа проверить нельзя")
-        return
-    for name, drop in changed.items():
-        ratio = f"; шлюз/наш = {drop / our_rub:.3g}" if our_rub else ""
-        print(f"  {name}: упало на {drop:.6f}{ratio}")
-    print("шлюз/наш ≈ 1: единица тарифа верна; ≈ 1000: цены за 1 тыс. токенов, а не за 1 млн (TODO(align))")
+def print_balance_drop(before: dict, after: dict, our_rub: float) -> None:
+    drop = after["spend"] - before["spend"]
+    print(f"\nостаток после проверки: {after['remaining']:.4f}; spend вырос на {drop:.6f}; "
+          f"наш клиент посчитал {our_rub:.6f} ₽")
+    print(compare_spend(drop, our_rub))
 
 
 def main() -> int:
@@ -81,7 +68,7 @@ def main() -> int:
 
     before = read_key_info(client)
     if before is not None:
-        print_balance("остаток бюджета до проверки", before)
+        print_balance("до проверки", before)
 
     listed: list[str] | None = None
     try:

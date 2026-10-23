@@ -32,12 +32,14 @@ class HttpLLM(LLMClient):
         self._headers = {"Authorization": f"Bearer {key}"}
         self._http = client or httpx.Client(timeout=float(llm.get("timeout_s", 60)))
 
-    def _request(self, method: str, path: str, **kw) -> tuple[dict, str]:
-        """(JSON ответа, "primary" | "reserve"). Сеть/5xx основного адреса -> один заход на резервный."""
+    def _request(self, method: str, path: str, *, root: bool = False, **kw) -> tuple[dict, str]:
+        """(JSON ответа, "primary" | "reserve"). Сеть/5xx основного адреса -> один заход на резервный.
+        root=True: путь от корня хоста, без суффикса /v1 (так устроен /key/info)."""
         failures: list[str] = []
         for name, base in self._endpoints:
             try:
-                r = self._http.request(method, f"{base}{path}", headers=self._headers, **kw)
+                url = (base[:-3] if root and base.endswith("/v1") else base) + path
+                r = self._http.request(method, url, headers=self._headers, **kw)
             except httpx.TimeoutException as e:
                 failures.append(f"{name}: таймаут ({type(e).__name__})")
             except httpx.TransportError as e:
@@ -85,7 +87,7 @@ class HttpLLM(LLMClient):
         return sorted(str(m.get("id")) for m in data.get("data", []))
 
     def key_info(self) -> dict:
-        return self._request("GET", "/key/info")[0]
+        return self._request("GET", "/key/info", root=True)[0]
 
     def close(self) -> None:
         self._http.close()
