@@ -10,3 +10,4 @@ reports/
 *.sqlite
 data/real/
 !.env.example
+out/

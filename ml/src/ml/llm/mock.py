@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import deque
+from collections.abc import Callable
 
 from pydantic import BaseModel
 
@@ -44,9 +45,11 @@ def _gen(node: dict, defs: dict, seed: int):
 
 
 class MockLLM(LLMClient):
-    def __init__(self, cfg: dict, store: Store | None = None, scenario: list | None = None):
+    def __init__(self, cfg: dict, store: Store | None = None, scenario: list | None = None,
+                 responders: dict[str, Callable[[list[dict]], str]] | None = None):
         super().__init__(cfg, store)
         self.scenario = deque(scenario or [])
+        self.responders = dict(responders or {})      # task -> функция(messages) -> сырой ответ (для осмысленного демо)
         self.calls = 0                       # счётчик «сетевых» вызовов
         self.requests: list[list[dict]] = []
 
@@ -58,7 +61,12 @@ class MockLLM(LLMClient):
         item = self.scenario.popleft() if self.scenario else None
         if isinstance(item, BaseException):
             raise item
-        text = item if item is not None else self._default(task, messages, schema)
+        if item is not None:
+            text = item
+        elif task in self.responders:
+            text = self.responders[task](messages)
+        else:
+            text = self._default(task, messages, schema)
         return RawResponse(text, tokens_in, estimate_tokens(text))
 
     def list_models(self) -> list[str]:

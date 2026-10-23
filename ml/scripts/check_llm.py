@@ -6,6 +6,9 @@ import os
 import sys
 import time
 
+if sys.stderr.encoding and sys.stderr.encoding.lower() != "utf-8":
+    sys.stderr.reconfigure(encoding="utf-8")
+
 from ml.config import get_config
 from ml.llm import LLMError, build_llm
 

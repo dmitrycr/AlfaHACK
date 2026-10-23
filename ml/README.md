@@ -52,10 +52,10 @@ curl -X POST localhost:8003/analyze_text -d '{"client_id":"DEMO_1","role":"CFO",
 ## Решения, которые стоит знать
 
 - **Хранилище** — один SQLite-файл (`.cache/ml_store.sqlite`): кеш LLM (`sha256(model, messages)`), теги (по `event_id`), карточки (по `client|event|role|prompt_version`), трассы, журнал вызовов, дневной расход.
-- **Бюджет**: `normal` → `degraded` (≥ 80%: дешёвая модель, N карточек уменьшается до `degraded_top_n`) → `cache_only` (≥ 95%) → отказ `BudgetExceeded` без записи в кеше (агент возвращает `status=budget_exceeded`).
+- **Бюджет**: `normal` → `degraded` (≥ `llm.degrade_at` = 80% от `daily_limit_rub`: только кеш, вызов без кеша даёт `DegradedMode`) → `BudgetExceeded` (≥ 100%). Расход считается по журналу за сегодня; цены токенов пока не заданы (`TODO(align)`), поэтому стоимость 0. Ключи `cheap_model` и `cache_only_at` в `config.yaml` относятся к прежней схеме (дешёвая модель с 80%, только кеш с 95%) и не используются.
 - **Покрытие платежей** (8.3): порог «только платежи» взят из конфига (0,50), как в разделе 18; формулировка раздела 8.3 («≥ 0,30») ей противоречит.
 - **Числа в карточке**: сравниваются как числа (14,0 = 14), целые 1–10 без «%» считаются счётом, утверждения со словом «оценка» освобождены.
-- **Тегирование без LLM** для пустого, обрезанного и не русского текста (экономия бюджета); при сбое LLM — запасные правила (`tagging/heuristics.py`), результат не кешируется.
+- **Тегирование**: один вызов LLM на событие, кеш по `event_id` (SQLite, таблица `kv`); пустой, обрезанный и не русский текст помечается шумом (`is_noise`, причина в `noise_reason`), но тоже тегируется и не удаляется. При сбое разбора ответа модели `event = null`, ничего не кешируется.
 - **Эмбеддинги не используются**: поиск — BM25 (`knowledge/retriever.py`), подмена через интерфейс `Retriever`.
 
 ## LLM-клиент (шаг 1 пятничного ТЗ)
@@ -67,6 +67,22 @@ curl -X POST localhost:8003/analyze_text -d '{"client_id":"DEMO_1","role":"CFO",
 только кеш, вызов без кеша даёт `DegradedMode`) → `BudgetExceeded` (≥ 100%). Цены (`llm.prices`) пусты: стоимость 0 и предупреждение
 `TODO(align)`, пока их нет, бюджет не расходуется. Проверка доступа: `LLM_MODE=mock python scripts/check_llm.py`.
 Ключи `cheap_model` и `cache_only_at` в `config.yaml` и описание бюджета выше («Решения») относятся к прежней схеме и клиентом шага 1 не используются.
+
+## Тегирование событий (шаг 2 пятничного ТЗ, контракт v0.1)
+
+`src/ml/contract.py` — командный контракт данных v0.1 (копия `schemas.py` из `contract_v0.1`, без изменений; главный). `src/ml/schemas.py` (приложение А) не используется
+тегированием и остаётся для кода профилей. `src/ml/tagging/`: `guard.py` (защита от инъекций), `aliases.py` (компании -> сектор), `tagger.py` (`Tagger.tag_event`),
+`mock_rules.py` (правила для ответов в режиме mock). Промпт: `src/ml/prompts/tagging-v2.txt` (версия `tagging-v2`).
+`Event` собирается так: `event_id`, `title` из входа (после очистки), `sources = [SourceRef(url, name=source, published_at, kind=news)]`, `collected_at` = момент вызова,
+остальное из ответа модели; без корректного `url` Event не строится (`event = null`, `noise_reason = "нет источника"`, LLM не вызывается).
+Значения `type`, `direction`, `horizon` — из контракта, `sectors` — из `config/sectors.yaml`, `factors` — идентификаторы из `config/factor_ids.yaml`, `okved` — двузначные коды; прочее отбрасывается с записью в лог.
+
+```bash
+LLM_MODE=mock python scripts/run_tagging.py --input tests/fixtures/news_30.json      # таблица, итоги, out/tags.jsonl
+uvicorn ml.services.tagging_app:app --port 8101                                      # из каталога src или с PYTHONPATH=src
+curl -X POST localhost:8101/tag -H 'content-type: application/json' -d '{"event_id":"e1","title":"...","text":"...","published_at":"2026-10-20T10:00:00+03:00","source":"Издание","url":"https://..."}'
+```
+Ответ `/tag` и элементов `/tag/batch` (тело и ответ — массивы): `{"event": Event | null, "is_noise": bool, "noise_reason": str | null, "suspicious": bool}`; `503`, если LLM недоступен или исчерпан бюджет.
 
 ## Формат Company Service
 

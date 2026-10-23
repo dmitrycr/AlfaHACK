@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS llm_calls (
     prompt_version TEXT, tokens_in INTEGER, tokens_out INTEGER, duration_ms INTEGER, status TEXT, cost_rub REAL,
     cached INTEGER, error TEXT);
 CREATE INDEX IF NOT EXISTS ix_llm_calls_day ON llm_calls(day);
+CREATE TABLE IF NOT EXISTS kv (ns TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (ns, key));
 """
 
 
@@ -112,10 +113,18 @@ class Store:
                    (now.isoformat(timespec="seconds"), now.date().isoformat(), run_id, task, model, prompt_version,
                     tokens_in, tokens_out, duration_ms, status, cost_rub, int(cached), error))
 
-    def journal(self) -> list[dict]:
+    def kv_get(self, ns: str, key: str) -> str | None:
+        rows = self._exec("SELECT value FROM kv WHERE ns=? AND key=?", (ns, key))
+        return rows[0][0] if rows else None
+
+    def kv_put(self, ns: str, key: str, value: str) -> None:
+        self._exec("INSERT OR REPLACE INTO kv(ns, key, value) VALUES (?,?,?)", (ns, key, value))
+
+    def journal(self, since_id: int = 0) -> list[dict]:
         cols = ["id", "ts", "day", "run_id", "task", "model", "prompt_version", "tokens_in", "tokens_out", "duration_ms",
                 "status", "cost_rub", "cached", "error"]
-        return [dict(zip(cols, r)) for r in self._exec(f"SELECT {', '.join(cols)} FROM llm_calls ORDER BY id")]
+        return [dict(zip(cols, r)) for r in
+                self._exec(f"SELECT {', '.join(cols)} FROM llm_calls WHERE id>? ORDER BY id", (since_id,))]
 
     def spent(self, day: date | None = None) -> float:
         d = (day or date.today()).isoformat()
@@ -150,6 +159,7 @@ class LLMClient(ABC):
         self.store = store or Store(resolve_path(cfg["paths"]["store"]))
         self.budget = Budget(self.store, float(llm["daily_limit_rub"]), float(llm.get("degrade_at", 0.8)))
         self._price_warned: set[str] = set()
+        self.api_calls = 0                   # сколько раз реально вызывали модель (включая повторы)
 
     @abstractmethod
     def call_raw(self, model: str, messages: list[dict], schema: type[BaseModel] | None = None,
@@ -234,6 +244,7 @@ class LLMClient(ABC):
     def _call_with_net_retries(self, model: str, messages: list[dict], schema, ctx: dict) -> tuple[RawResponse, int, float]:
         for attempt in range(self.net_retries + 1):
             self._guard(ctx)
+            self.api_calls += 1
             t0 = time.perf_counter()
             try:
                 raw = self.call_raw(model, messages, schema, ctx["task"])
