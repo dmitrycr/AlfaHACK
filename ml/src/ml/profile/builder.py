@@ -113,7 +113,7 @@ class ProfileBuilder:
         self.d = load_data(self.data_dir)
         u = self.d.u
         self.okved = {cid: normalize_okved(code) for cid, code in u["MAINOKVED_CODE"].items()}
-        self.sector = {cid: self.ref.sector_of_class(o["class"]) for cid, o in self.okved.items()}
+        self.sector = {cid: self.ref.sector_of_okved(o["class"], o["group"]) for cid, o in self.okved.items()}
         self.group = u["GROUP_ID"].to_dict()
         self.gsize = self.d.group_size.to_dict()
         self.region = u["REGION"].fillna("").to_dict()

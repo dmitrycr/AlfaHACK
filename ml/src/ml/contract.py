@@ -290,7 +290,7 @@ EXAMPLES = {
     "event": Event(
         event_id="E-0001", title="Правительство сокращает программу льготной ипотеки",
         summary="Лимиты льготной ипотеки снижаются со следующего квартала. Застройщики ждут падения продаж.",
-        sources=[NEWS], type="regulation", sectors=["Строительство"], okved=["41", "43"],
+        sources=[NEWS], type="regulation", sectors=["Строительство и девелопмент"], okved=["41", "43"],
         regions=["РФ"], factors=["key_rate"], direction="negative", horizon="medium",
         importance=4, collected_at="2026-10-20T10:00:00+03:00"),
     "profile": Profile(
@@ -298,8 +298,8 @@ EXAMPLES = {
         sector="Металлургия", revenue_bln_rub=180, region="Липецкая обл.",
         products={"loan": True, "leasing": True, "factoring": False, "deposit": True},
         ved={"fts_flag": True, "country": "Турция"},
-        counterparties=[{"side": "buyer", "sector": "Строительство", "share": 0.34},
-                        {"side": "supplier", "sector": "Горнодобыча", "share": 0.41}],
+        counterparties=[{"side": "buyer", "sector": "Строительство и девелопмент", "share": 0.34},
+                        {"side": "supplier", "sector": "Горнодобыча (уголь, драгметаллы, алмазы)", "share": 0.41}],
         top_counterparty_share=0.22,
         channels=[{"name": "demand", "weight": 0.78, "source": "data",
                    "evidence": "34% входящего оборота от компаний с ОКВЭД 41-43"},

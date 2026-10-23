@@ -8,7 +8,7 @@
     "url": "https://news.example.com/2026/10/evt-001",
     "expected_type": "macro",
     "expected_sectors": [
-      "Финансы"
+      "Банки, страхование, финансы"
     ]
   },
   {
@@ -20,7 +20,7 @@
     "url": "https://news.example.com/2026/10/evt-002",
     "expected_type": "macro",
     "expected_sectors": [
-      "Финансы"
+      "Банки, страхование, финансы"
     ]
   },
   {
@@ -62,7 +62,8 @@
     "url": "https://news.example.com/2026/10/evt-006",
     "expected_type": "regulation",
     "expected_sectors": [
-      "Металлургия и добыча"
+      "Металлургия",
+      "Горнодобыча (уголь, драгметаллы, алмазы)"
     ]
   },
   {
@@ -74,7 +75,7 @@
     "url": "https://news.example.com/2026/10/evt-007",
     "expected_type": "regulation",
     "expected_sectors": [
-      "Строительство"
+      "Строительство и девелопмент"
     ]
   },
   {
@@ -86,8 +87,7 @@
     "url": "https://news.example.com/2026/10/evt-008",
     "expected_type": "regulation",
     "expected_sectors": [
-      "Строительство",
-      "Недвижимость"
+      "Строительство и девелопмент"
     ]
   },
   {
@@ -99,7 +99,7 @@
     "url": "https://news.example.com/2026/10/evt-009",
     "expected_type": "regulation",
     "expected_sectors": [
-      "Финансы"
+      "Банки, страхование, финансы"
     ]
   },
   {
@@ -111,7 +111,7 @@
     "url": "https://news.example.com/2026/10/evt-010",
     "expected_type": "regulation",
     "expected_sectors": [
-      "Энергетика"
+      "Энергетика и коммунальные услуги"
     ]
   },
   {
@@ -135,7 +135,8 @@
     "url": "https://news.example.com/2026/10/evt-012",
     "expected_type": "commodity",
     "expected_sectors": [
-      "Металлургия и добыча"
+      "Металлургия",
+      "Горнодобыча (уголь, драгметаллы, алмазы)"
     ]
   },
   {
@@ -147,7 +148,7 @@
     "url": "https://news.example.com/2026/10/evt-013",
     "expected_type": "commodity",
     "expected_sectors": [
-      "Химия и удобрения"
+      "Химия, удобрения, нефтехимия"
     ]
   },
   {
@@ -159,7 +160,8 @@
     "url": "https://news.example.com/2026/10/evt-014",
     "expected_type": "commodity",
     "expected_sectors": [
-      "Металлургия и добыча"
+      "Металлургия",
+      "Горнодобыча (уголь, драгметаллы, алмазы)"
     ]
   },
   {
@@ -171,7 +173,7 @@
     "url": "https://news.example.com/2026/10/evt-015",
     "expected_type": "commodity",
     "expected_sectors": [
-      "Агро и пищевая промышленность"
+      "Пищевая промышленность и агро"
     ]
   },
   {
@@ -183,7 +185,7 @@
     "url": "https://news.example.com/2026/10/evt-016",
     "expected_type": "corporate",
     "expected_sectors": [
-      "Строительство"
+      "Строительство и девелопмент"
     ]
   },
   {
@@ -195,8 +197,7 @@
     "url": "https://news.example.com/2026/10/evt-017",
     "expected_type": "industry",
     "expected_sectors": [
-      "Строительство",
-      "Недвижимость"
+      "Строительство и девелопмент"
     ]
   },
   {
@@ -208,8 +209,8 @@
     "url": "https://news.example.com/2026/10/evt-018",
     "expected_type": "corporate",
     "expected_sectors": [
-      "Строительство",
-      "Финансы"
+      "Строительство и девелопмент",
+      "Банки, страхование, финансы"
     ]
   },
   {
@@ -221,7 +222,7 @@
     "url": "https://news.example.com/2026/10/evt-019",
     "expected_type": "corporate",
     "expected_sectors": [
-      "Розничная торговля"
+      "Розничная торговля и e-commerce"
     ]
   },
   {
@@ -245,7 +246,7 @@
     "url": "https://news.example.com/2026/10/evt-021",
     "expected_type": "industry",
     "expected_sectors": [
-      "Розничная торговля"
+      "Розничная торговля и e-commerce"
     ]
   },
   {
@@ -257,7 +258,7 @@
     "url": "https://news.example.com/2026/10/evt-022",
     "expected_type": "corporate",
     "expected_sectors": [
-      "Энергетика"
+      "Энергетика и коммунальные услуги"
     ]
   },
   {
@@ -269,7 +270,7 @@
     "url": "https://news.example.com/2026/10/evt-023",
     "expected_type": "corporate",
     "expected_sectors": [
-      "Энергетика"
+      "Энергетика и коммунальные услуги"
     ]
   },
   {
@@ -281,7 +282,7 @@
     "url": "https://news.example.com/2026/10/evt-024",
     "expected_type": "regional",
     "expected_sectors": [
-      "Машиностроение и промышленность"
+      "Машиностроение, автопром, ОПК"
     ]
   },
   {
@@ -293,7 +294,7 @@
     "url": "https://news.example.com/2026/10/evt-025",
     "expected_type": "regional",
     "expected_sectors": [
-      "Агро и пищевая промышленность"
+      "Пищевая промышленность и агро"
     ]
   },
   {
@@ -305,8 +306,9 @@
     "url": "https://news.example.com/2026/10/evt-026",
     "expected_type": "regional",
     "expected_sectors": [
-      "Металлургия и добыча",
-      "Энергетика"
+      "Металлургия",
+      "Горнодобыча (уголь, драгметаллы, алмазы)",
+      "Энергетика и коммунальные услуги"
     ]
   },
   {
@@ -318,7 +320,8 @@
     "url": "https://news.example.com/2026/10/evt-027",
     "expected_type": "sanctions",
     "expected_sectors": [
-      "Металлургия и добыча"
+      "Металлургия",
+      "Горнодобыча (уголь, драгметаллы, алмазы)"
     ]
   },
   {
@@ -330,7 +333,7 @@
     "url": "https://news.example.com/2026/10/evt-028",
     "expected_type": "sanctions",
     "expected_sectors": [
-      "Финансы"
+      "Банки, страхование, финансы"
     ]
   },
   {
@@ -354,7 +357,7 @@
     "url": "https://news.example.com/2026/10/evt-030",
     "expected_type": "regulation",
     "expected_sectors": [
-      "Здравоохранение и социальная сфера"
+      "Фарма и здравоохранение"
     ]
   }
 ]

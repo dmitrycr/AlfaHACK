@@ -61,6 +61,7 @@ class RefData:
     companies: dict[str, dict]
     okved_classes: dict[str, str]
     okved_default: str
+    okved_groups: dict[str, str] = field(default_factory=dict)          # группа ("49.5") сильнее класса
     demand: dict[str, dict[str, float]] = field(default_factory=dict)   # from -> to -> strength
     supply: dict[str, dict[str, float]] = field(default_factory=dict)
     commodities: dict[str, dict[str, list[str]]] = field(default_factory=dict)
@@ -78,6 +79,10 @@ class RefData:
 
     def sector_of_class(self, cls: str | None) -> str:
         return self.okved_classes.get(str(cls)[:2], self.okved_default) if cls else self.okved_default
+
+    def sector_of_okved(self, cls: str | None, group: str | None = None) -> str:
+        """Сначала по группе (49.5), затем по классу (49), иначе okved_default."""
+        return self.okved_groups.get(str(group)) or self.sector_of_class(cls)
 
     def classes_of_sector(self, sector: str) -> list[str]:
         return sorted(c for c, s in self.okved_classes.items() if s == sector)
@@ -140,7 +145,7 @@ def load_refdata(config_dir: str | None = None) -> RefData:
     comp = yaml.safe_load((d / "aliases.yaml").read_text(encoding="utf-8"))["companies"]
     ok = json.loads((d / "okved_to_sector.json").read_text(encoding="utf-8"))
     ref = RefData(sectors=sec["sectors"], factors=sec["factors"], companies=comp,
-                  okved_classes=ok["classes"], okved_default=ok["default"])
+                  okved_classes=ok["classes"], okved_default=ok["default"], okved_groups=ok.get("groups", {}))
     for name, info in comp.items():
         for alias in sorted(set(info.get("aliases", [name]) + [name]), key=len, reverse=True):
             ref._alias_re.append((name, info["sector"], _wb(alias)))

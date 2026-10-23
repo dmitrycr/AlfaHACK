@@ -23,7 +23,7 @@ from .guard import sanitize
 
 log = logging.getLogger("ml.tagging")
 
-PROMPT_VERSION = "tagging-v2"
+PROMPT_VERSION = "tagging-v3"
 PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / f"{PROMPT_VERSION}.txt"
 TITLE_MAX = 300
 _PLACEHOLDER = re.compile(r"\{(sectors|factors|companies_hint|title|lead)\}")
@@ -80,7 +80,8 @@ def load_vocab(config_dir: str | None = None) -> Vocab:
     d = Path(config_dir) if config_dir else CONFIG_DIR
     sec = yaml.safe_load((d / "sectors.yaml").read_text(encoding="utf-8"))      # TODO(align): список секторов от команды
     ids = yaml.safe_load((d / "factor_ids.yaml").read_text(encoding="utf-8"))
-    return Vocab(tuple(sec["sectors"]), tuple(ids.values()), dict(ids))
+    service = set(sec.get("service_sectors", []))                       # «Прочее» в списки для LLM и Event.sectors не входит
+    return Vocab(tuple(s for s in sec["sectors"] if s not in service), tuple(ids.values()), dict(ids))
 
 
 def build_tagging_llm(cfg: dict | None = None) -> LLMClient:

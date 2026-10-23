@@ -27,7 +27,9 @@ def test_okved_normalization():
     assert normalize_okved("6.2")["class"] == "06" and normalize_okved(None)["class"] is None
     assert section_of_class("62") == "J" and section_of_class("24") == "C" and section_of_class("68") == "L"
     ref = load_refdata()
-    assert ref.sector_of_class("46") == "Оптовая торговля" and ref.sector_of_class("96") == "Услуги и прочее"
+    assert ref.sector_of_class("46") == "Оптовая торговля и дистрибуция" and ref.sector_of_class("96") == "Общепит и потребительские услуги"
+    assert ref.sector_of_okved("49", "49.5") == "Нефть и газ" and ref.sector_of_okved("49", "49.1") == "Транспорт и логистика"   # группа сильнее класса
+    assert ref.sector_of_okved("45", "45.1") == "Прочее" and ref.sector_of_okved("06", "06.1") == "Нефть и газ"
 
 
 def test_garbage_id_removed(builder):
@@ -47,9 +49,9 @@ def test_self_payments_excluded(builder):
 
 def test_buyers_show_construction_and_real_estate(builder):
     p = builder.build_profile("U_5658")
-    assert {"Строительство", "Недвижимость"} <= set(p.buyers)
-    assert p.sector == "Оптовая торговля" and p.products["loan"] and p.products["leasing"]
-    assert set(p.suppliers) >= {"Металлургия и добыча", "Транспорт и логистика"}
+    assert "Строительство и девелопмент" in set(p.buyers)
+    assert p.sector == "Оптовая торговля и дистрибуция" and p.products["loan"] and p.products["leasing"]
+    assert set(p.suppliers) >= {"Металлургия", "Транспорт и логистика"}
     assert 0.8 < p.coverage["buyers"] < 1.0                                  # контрагент без записи -> unknown
 
 
@@ -64,7 +66,7 @@ def test_unknown_counterparties_reduce_coverage(builder):
 def test_intragroup_excluded_but_measured(builder):
     p = builder.build_profile("U_GRP1")
     assert p.coverage["intragroup_buyers"] > 0.5 and p.coverage["intragroup_suppliers"] > 0.5
-    assert "Оптовая торговля" not in p.buyers                               # внутригруппового сектора в долях нет
+    assert "Оптовая торговля и дистрибуция" not in p.buyers                               # внутригруппового сектора в долях нет
     assert sum(p.buyers.values()) <= 1.0
 
 
@@ -72,7 +74,7 @@ def test_concentration(synth):
     # в синтетике у клиентов по 3-9 контрагентов на сторону: для проверки самой доли порог контрагентов снижаем
     b = ProfileBuilder(synth, load_config(overrides={"profile": {"concentration_min_counterparties": 1}}))
     p = b.build_profile("U_4909")
-    assert p.concentration["share"] > 0.4 and p.concentration["sector"] == "Машиностроение и промышленность"
+    assert p.concentration["share"] > 0.4 and p.concentration["sector"] == "Машиностроение, автопром, ОПК"
 
 
 def test_channels_by_rules(builder):

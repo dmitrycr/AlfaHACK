@@ -36,7 +36,7 @@ uvicorn ml.services.agent_app:app --port 8003     # ещё: ranking_app (8001), 
 
 ```bash
 curl -X POST localhost:8001/rank -H 'content-type: application/json' \
-  -d '{"client_id":"DEMO_1","events":[{"event_id":"e1","title":"...","type":"макро","importance":4,"sectors":["Строительство"],"published_at":"2026-09-02T09:00:00+03:00"}],"top_n":5}'
+  -d '{"client_id":"DEMO_1","events":[{"event_id":"e1","title":"...","type":"макро","importance":4,"sectors":["Строительство и девелопмент"],"published_at":"2026-09-02T09:00:00+03:00"}],"top_n":5}'
 curl -X POST localhost:8002/search -d '{"query":"ключевая ставка 14%","k":3}' -H 'content-type: application/json'
 curl -X POST localhost:8003/analyze -d '{"client_id":"DEMO_1","event_id":"evt_003","role":"CEO"}' -H 'content-type: application/json'
 curl -X POST localhost:8003/analyze_text -d '{"client_id":"DEMO_1","role":"CFO","title":"...","text":"..."}' -H 'content-type: application/json'
@@ -68,11 +68,20 @@ curl -X POST localhost:8003/analyze_text -d '{"client_id":"DEMO_1","role":"CFO",
 `TODO(align)`. Проверка доступа и сверки стоимости (`spend` по `{host}/key/info` до и после, без `/v1`): `LLM_MODE=http python scripts/check_llm.py`.
 Ключи `cheap_model` и `cache_only_at` в `config.yaml` и описание бюджета выше («Решения») относятся к прежней схеме и клиентом шага 1 не используются.
 
+## Сектора и компании (players_by_sector.xlsx)
+
+Канонические названия 16 секторов берутся из листа «Сектора» и копируются в `Event.sectors`, `Profile.sector`, `CounterpartyShare.sector` символ в символ.
+`python scripts/make_sectors_from_players.py [--xlsx ...]` генерирует `config/sectors.yaml` (16 секторов + служебное «Прочее», `TODO(align)`; факторы сохраняются),
+`config/aliases.yaml` (137 компаний: имя, тикер, вручную добавленные алиасы переносятся; короткие алиасы до 4 символов только в точном написании)
+и `config/okved_to_sector.json` (ОКВЭД «B.06, C.19, H.49.5»: сначала `groups` — группа 49.5 = Нефть и газ, затем `classes`, остальное = «Прочее») и печатает неоднозначные случаи.
+Старые названия секторов переведены таблицей `config/sector_rename.csv` (`python scripts/apply_sector_rename.py`; строки «Металлургия и добыча» продублированы на Металлургию и Горнодобычу,
+слитые сектора схлопнуты по максимуму `strength`). Для новых секторов (Лесная и ЦБП, Общепит, Прочее) значения матрицы не заданы (0): `TODO(align)` для Андрея.
+
 ## Тегирование событий (шаг 2 пятничного ТЗ, контракт v0.1)
 
-`src/ml/contract.py` — командный контракт данных v0.1 (копия `schemas.py` из `contract_v0.1`, без изменений; главный). `src/ml/schemas.py` (приложение А) не используется
+`src/ml/contract.py` — командный контракт данных v0.1 (побайтовая копия обновлённого `schemas.py` команды, без изменений; главный). `src/ml/schemas.py` (приложение А) не используется
 тегированием и остаётся для кода профилей. `src/ml/tagging/`: `guard.py` (защита от инъекций), `aliases.py` (компании -> сектор), `tagger.py` (`Tagger.tag_event`),
-`mock_rules.py` (правила для ответов в режиме mock). Промпт: `src/ml/prompts/tagging-v2.txt` (версия `tagging-v2`).
+`mock_rules.py` (правила для ответов в режиме mock). Промпт: `src/ml/prompts/tagging-v3.txt` (версия `tagging-v3`; ключ кеша тегов `tags:tagging-v3` включает версию, теги прежних версий не подмешиваются): определения семи типов с вымышленными примерами, список секторов берётся из `config/sectors.yaml` (16 секторов без служебного «Прочее»).
 `Event` собирается так: `event_id`, `title` из входа (после очистки), `sources = [SourceRef(url, name=source, published_at, kind=news)]`, `collected_at` = момент вызова,
 остальное из ответа модели; без корректного `url` Event не строится (`event = null`, `noise_reason = "нет источника"`, LLM не вызывается).
 Значения `type`, `direction`, `horizon` — из контракта, `sectors` — из `config/sectors.yaml`, `factors` — идентификаторы из `config/factor_ids.yaml`, `okved` — двузначные коды; прочее отбрасывается с записью в лог.

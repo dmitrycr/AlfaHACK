@@ -30,7 +30,7 @@ def ev(**kw) -> dict:
 
 
 def reply(**kw) -> str:
-    d = dict(type="macro", sectors=["Финансы"], okved=["64"], companies=[], regions=["РФ"], factors=["key_rate"],
+    d = dict(type="macro", sectors=["Банки, страхование, финансы"], okved=["64"], companies=[], regions=["РФ"], factors=["key_rate"],
              direction="unclear", horizon="medium", importance=5, summary="Ставка сохранена.", is_noise=False, noise_reason=None)
     d.update(kw)
     return json.dumps(d, ensure_ascii=False)
@@ -63,7 +63,7 @@ def test_sanitize_does_not_crash(bad):
 # ---------- aliases ----------
 def test_find_companies_pik():
     found = find_companies("ПИК объявил о запуске нового проекта")
-    assert {"name": "ПИК", "sector": "Строительство"} in found
+    assert {"name": "ПИК", "sector": "Строительство и девелопмент"} in found
     assert find_companies("Лукойла и Газпрома") and find_companies("копик") == []   # падеж есть, границы слов соблюдены
     assert find_companies("") == []
 
@@ -71,15 +71,15 @@ def test_find_companies_pik():
 def test_short_aliases_only_exact_spelling():
     assert find_companies("пик инфляции пришёлся на весну") == []                  # слово «пик» - не компания
     assert find_companies("Пик инфляции пройден") == [] and find_companies("мтс и сбер") == []
-    assert find_companies("ПИК объявил о запуске") == [{"name": "ПИК", "sector": "Строительство"}]
-    assert [c["name"] for c in find_companies("МТС и Сбер повысили тарифы")] == ["МТС", "Сбербанк"]
+    assert find_companies("ПИК объявил о запуске") == [{"name": "ПИК", "sector": "Строительство и девелопмент"}]
+    assert sorted(c["name"] for c in find_companies("МТС и Сбер повысили тарифы")) == ["МТС", "Сбербанк"]   # порядок - как в xlsx
     assert find_companies("лукойл и газпром")                                      # длинные алиасы: без учёта регистра
 
 
 def test_find_companies_builtin_when_no_file(tmp_path, caplog):
     with caplog.at_level(logging.WARNING, logger="ml.tagging"):
         found = find_companies("ПИК объявил", path=tmp_path / "nope.yaml")
-    assert found and found[0]["sector"] == "Строительство" and "встроенный" in caplog.text
+    assert found and found[0]["sector"] == "Строительство и девелопмент" and "встроенный" in caplog.text
 
 
 # ---------- tag_event / news_30 ----------
@@ -135,12 +135,12 @@ def test_bad_date_no_event(cfg):
 
 
 def test_values_outside_lists_are_dropped_and_logged(cfg, caplog):
-    raw = reply(sectors=["Космос", "Строительство", "Строительство"], factors=["биткоин", "key_rate", "Ставка"],
+    raw = reply(sectors=["Космос", "Строительство и девелопмент", "Строительство и девелопмент"], factors=["биткоин", "key_rate", "Ставка"],
                 okved=["41", "4.1", "abc", "123", " 43 "], companies=["Рога и копыта"], regions=["Москва", " "])
     t = Tagger(MockLLM(cfg, scenario=[raw]), cfg)
     with caplog.at_level(logging.WARNING, logger="ml.tagging"):
         e = t.tag_event(ev()).event
-    assert e.sectors == ["Строительство"] and e.factors == ["key_rate"] and e.okved == ["41", "43"]
+    assert e.sectors == ["Строительство и девелопмент"] and e.factors == ["key_rate"] and e.okved == ["41", "43"]
     assert e.companies == ["Рога и копыта"] and e.regions == ["Москва"]
     assert "Космос" in caplog.text and "биткоин" in caplog.text
 
@@ -157,18 +157,18 @@ def test_companies_hint_and_alias_merge(cfg):
     llm = MockLLM(cfg, scenario=[reply(type="corporate", sectors=[], companies=[], importance=3)])
     t = Tagger(llm, cfg)
     r = t.tag_event(ev(title="ПИК объявил о новых проектах", text="Группа ПИК объявила о запуске новых жилых комплексов в Москве."))
-    assert "ПИК (Строительство)" in llm.requests[0][0]["content"]               # подсказка ушла в промпт
-    assert r.event.companies == ["ПИК"] and r.event.sectors == ["Строительство"]
+    assert "ПИК (Строительство и девелопмент)" in llm.requests[0][0]["content"]               # подсказка ушла в промпт
+    assert r.event.companies == ["ПИК"] and r.event.sectors == ["Строительство и девелопмент"]
 
 
 def test_prompt_version_and_placeholders(cfg):
     t = make(cfg)
     t.tag_event(ev())
     prompt = t.llm.requests[0][0]["content"]
-    assert PROMPT_VERSION == "tagging-v2" and "{sectors}" not in prompt and "{lead}" not in prompt
-    for v in ("regulation", "key_rate", "Строительство", "unclear", "short", "важность", "<<<NEWS"):
+    assert PROMPT_VERSION == "tagging-v3" and "{sectors}" not in prompt and "{lead}" not in prompt
+    for v in ("regulation", "key_rate", "Строительство и девелопмент", "unclear", "short", "важность", "<<<NEWS"):
         assert v.lower() in prompt.lower()
-    assert t.llm.store.journal()[0]["prompt_version"] == "tagging-v2"
+    assert t.llm.store.journal()[0]["prompt_version"] == "tagging-v3"
 
 
 # ---------- news_dirty ----------
@@ -194,7 +194,7 @@ def test_dirty_html_long_and_weird_symbols(cfg):
     t = make(cfg)
     assert t.tag_event(DIRTY["dirty_05"]).event.summary.count("<") == 0
     t.tag_event(DIRTY["dirty_06"])
-    assert all(len(m["content"]) < 4000 for req in t.llm.requests for m in req)          # длинный текст обрезан
+    assert all(len(m["content"]) < 5500 for req in t.llm.requests for m in req)          # длинный текст обрезан (шаблон v3 ~3,5 тыс. символов)
     t.tag_event(DIRTY["dirty_07"])
     assert not any(ch in t.llm.requests[-1][0]["content"] for ch in "​\x07")
 
@@ -252,3 +252,40 @@ def test_api_budget_exceeded_is_503(cfg):
         assert c.post("/tag/batch", json=[ev()]).json()[0]["noise_reason"].startswith("ошибка LLM")
     finally:
         tagging_app.set_tagger(None)
+
+
+# ---- tagging-v3: сектора из xlsx, определения типов, ключ кеша ------------------------------------------------
+
+def test_vocab_is_the_16_canonical_sectors_without_service_sector():
+    import yaml
+
+    from ml.config import CONFIG_DIR
+    sec = yaml.safe_load((CONFIG_DIR / "sectors.yaml").read_text(encoding="utf-8"))
+    assert len(VOCAB.sectors) == 16 and "Прочее" not in VOCAB.sectors and sec["service_sectors"] == ["Прочее"]
+    assert set(VOCAB.sectors) | {"Прочее"} == set(sec["sectors"])
+    assert "Горнодобыча (уголь, драгметаллы, алмазы)" in VOCAB.sectors and "Нефть и газ" in VOCAB.sectors
+
+
+def test_prompt_v3_has_type_definitions_examples_and_all_sectors(cfg):
+    t = make(cfg)
+    prompt = t._prompt("Заголовок", "Текст новости.", [])
+    for name in ("macro", "industry", "regional", "corporate", "regulation", "commodity", "sanctions"):
+        assert f"\n{name} = " in prompt
+    assert "ВВП" in prompt and prompt.count("Пример: «") == 7
+    assert all(sector in prompt for sector in VOCAB.sectors) and "Прочее" not in prompt.split("Список секторов:")[1].split("\n")[0]
+    assert prompt.rstrip().endswith("Верни только JSON, без пояснений и без комментариев")
+
+
+def test_prompt_examples_are_not_taken_from_fixtures(cfg):
+    import re
+    examples = re.findall(r"Пример: «(.+)»", make(cfg).template)
+    corpus = " ".join(n["title"] + " " + n["text"] for n in NEWS)
+    assert len(examples) == 7 and not any(e in corpus for e in examples)
+
+
+def test_tag_cache_key_includes_prompt_version(cfg):
+    t = make(cfg)
+    assert PROMPT_VERSION in t.NS
+    t.tag_event(ev())
+    assert t.llm.store.kv_get(f"tags:{PROMPT_VERSION}", "t1") is not None
+    assert t.llm.store.kv_get("tags:tagging-v2", "t1") is None                  # теги прежней версии не подмешиваются
