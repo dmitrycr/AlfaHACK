@@ -13,6 +13,7 @@ from rank_bm25 import BM25Okapi
 from ..contract import SourceKind, SourceRef
 from .tokenizer import tokenize
 
+STALE_MARK = " [устаревший материал]"
 BANK_URL = "https://bank.local/analytics/"           # TODO(align): реальных адресов у PDF нет, ссылка-заглушка
 
 
@@ -26,19 +27,26 @@ class Chunk:
     score: float = 0.0
     slug: str = ""                                    # транслитерация названия документа (для url и fragment_id)
     published_at: str = ""                            # ISO-8601; TODO(align): дата из текста/имени файла или дата изменения файла
-    date_source: str = ""                             # text | filename | mtime
+    date_source: str = ""                             # text | filename | mtime | config
+    title: str = ""                                   # название из config/bank_documents.yaml (пусто - используется document)
+    stale: bool = False                               # материал устарел (bank_documents.yaml: stale: true)
+    language: str = ""
 
     @property
     def source_id(self) -> str:
         return f"bank:{self.document}#{self.page}"
 
     def source_ref(self) -> SourceRef:
-        return SourceRef(url=f"{BANK_URL}{self.slug}", name=self.document, published_at=datetime.fromisoformat(self.published_at),
+        name = self.title or self.document
+        if self.stale:
+            name += STALE_MARK                         # в контракте SourceRef нет поля stale: пометка в названии
+        return SourceRef(url=f"{BANK_URL}{self.slug}", name=name, published_at=datetime.fromisoformat(self.published_at),
                          kind=SourceKind.bank_analytics, fragment_id=f"{self.slug}#{self.page}")
 
     def to_result(self) -> dict:
         return {"chunk_id": self.chunk_id, "document": self.document, "page": self.page, "topic": self.topic,
                 "score": round(self.score, 4), "text": self.text, "source_id": self.source_id,
+                "title": self.title or self.document, "stale": self.stale,
                 "source_ref": self.source_ref().model_dump(mode="json")}
 
     def to_json(self) -> dict:

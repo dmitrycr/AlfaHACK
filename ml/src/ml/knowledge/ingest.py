@@ -7,9 +7,12 @@ import logging
 import re
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+import yaml
 
 from .chunker import chunk_text
 from .retriever import Chunk
@@ -39,7 +42,7 @@ SUFFIXES = (".pdf", ".txt")
 @dataclass
 class IngestReport:
     src_dir: str
-    documents: list[dict] = field(default_factory=list)       # {document, pages, chunks, published_at, date_source}
+    documents: list[dict] = field(default_factory=list)       # {document, pages, chunks, published_at, date_source, chars, cyr_share, ocr_pages, short_pages}
     skipped: list[str] = field(default_factory=list)
     chunks: int = 0
     message: str = ""
@@ -79,23 +82,80 @@ def _pdftotext(path: Path) -> list[str]:
     return out.decode("utf-8", "replace").split("\f")
 
 
-def extract_pages(path: Path) -> list[str]:
-    """Тексты страниц (индекс 0 = страница 1). Пустой список - текста нет (например, скан без текстового слоя)."""
+SHORT_PAGE_CHARS = 100          # страница короче: скорее всего график или таблица, OCR почти ничего не дал
+
+
+def load_bank_meta(path: str | Path | None) -> dict[str, dict]:
+    """config/bank_documents.yaml -> {имя файла без расширения: {title, published_at, language, stale}}. Нет файла - пусто."""
+    p = Path(path) if path else None
+    if not p or not p.exists():
+        return {}
+    return (yaml.safe_load(p.read_text(encoding="utf-8")) or {}).get("documents", {}) or {}
+
+
+def _ocr_pages(path: Path, empty: list[int], ocr, text_dir: Path | None, force: bool) -> dict[int, str]:
+    """OCR страниц без текстового слоя. Готовые страницы (text_dir/<документ>/<страница>.txt) повторно не распознаются."""
+    doc_dir = text_dir / path.stem if text_dir else None
+    got: dict[int, str] = {}
+    todo = []
+    for i in empty:
+        f = doc_dir / f"{i + 1}.txt" if doc_dir else None
+        if f is not None and f.exists() and not force:
+            got[i] = f.read_text(encoding="utf-8")
+        else:
+            todo.append(i)
+    if todo:
+        ocr.check()                                             # нет tesseract: остановиться сразу, до долгой работы
+        log.info("%s: OCR %d стр. (из кеша %d)", path.name, len(todo), len(got))
+
+        def one(i: int) -> tuple[int, str]:
+            return i, ocr.ocr_page(path, i)
+
+        with ThreadPoolExecutor(max_workers=max(1, int(getattr(ocr, "workers", 1)))) as pool:
+            for i, text in pool.map(one, todo):
+                got[i] = text
+                if doc_dir is not None:
+                    doc_dir.mkdir(parents=True, exist_ok=True)
+                    with open(doc_dir / f"{i + 1}.txt", "w", encoding="utf-8", newline="\n") as fh:
+                        fh.write(text)
+    return got
+
+
+def extract_pages(path: Path, ocr=None, text_dir: Path | None = None, force_ocr: bool = False, stats: dict | None = None) -> list[str]:
+    """Тексты страниц (индекс 0 = страница 1). Пустой список - текста нет (например, скан без текстового слоя, а OCR не задан).
+    ocr: движок с check() и ocr_page(pdf, индекс); страницы без текстового слоя распознаются и кешируются в text_dir.
+    stats (если передан) получает ocr_pages (номера страниц с 1) и short_pages (страницы короче SHORT_PAGE_CHARS)."""
+    n_pdf = None
     if path.suffix.lower() == ".txt":
         pages = path.read_text(encoding="utf-8", errors="replace").split("\f")
     else:
         pages = []
         try:
             from pypdf import PdfReader
-            pages = [(p.extract_text() or "") for p in PdfReader(str(path)).pages]
+            reader = PdfReader(str(path))
+            n_pdf = len(reader.pages)
+            pages = [(p.extract_text() or "") for p in reader.pages]
         except Exception as e:                                  # noqa: BLE001 - битый PDF не должен ронять загрузку остальных
             log.warning("%s: pypdf не смог прочитать (%s)", path.name, type(e).__name__)
         if not any(p.strip() for p in pages):
             log.info("%s: pypdf не дал текста, пробуем pdftotext", path.name)
             pages = _pdftotext(path)
+            if not any(p.strip() for p in pages) and n_pdf:
+                pages = [""] * n_pdf                            # скан: страницы есть, текста нет
     pages = [normalize(p) for p in pages]
+    ocr_done: list[int] = []
+    if ocr is not None and n_pdf is not None and path.suffix.lower() == ".pdf":
+        empty = [i for i, p in enumerate(pages) if not p]
+        if empty:
+            got = _ocr_pages(path, empty, ocr, text_dir, force_ocr)
+            for i, text in got.items():
+                pages[i] = normalize(text)
+            ocr_done = [i + 1 for i in sorted(got)]
     while pages and not pages[-1]:                              # хвостовой \f после последней страницы
         pages.pop()
+    if stats is not None:
+        stats["ocr_pages"] = [p for p in ocr_done if p <= len(pages)]
+        stats["short_pages"] = [i for i, p in enumerate(pages, 1) if len(p) < SHORT_PAGE_CHARS]
     return pages if any(pages) else []
 
 
@@ -144,24 +204,47 @@ def publication_date(path: Path, first_page: str) -> tuple[datetime, str]:
     return datetime.fromtimestamp(path.stat().st_mtime, MSK), "mtime"
 
 
-def build_chunks(path: Path, lo: int, hi: int, overlap: int) -> tuple[list[Chunk], dict] | None:
-    pages = extract_pages(path)
+def _config_date(value) -> datetime | None:
+    try:
+        d = datetime.fromisoformat(str(value))
+    except ValueError:
+        return None
+    return d if d.tzinfo else d.replace(tzinfo=MSK)
+
+
+def build_chunks(path: Path, lo: int, hi: int, overlap: int, ocr=None, text_dir: Path | None = None, meta: dict | None = None,
+                 force_ocr: bool = False) -> tuple[list[Chunk], dict] | None:
+    stats: dict = {}
+    pages = extract_pages(path, ocr, text_dir, force_ocr, stats)
     if not pages:
         return None
-    title = path.stem.replace("_", " ").strip()           # TODO(align): название материала = имя файла
-    slug = slugify(title)
+    document = path.stem.replace("_", " ").strip()        # идентификатор документа: source_id = bank:<document>#<страница>
+    slug = slugify(document)
+    info = (meta or {}).get(path.stem, {})
     published, source = publication_date(path, pages[0])
+    if info.get("published_at") and (cfg_date := _config_date(info["published_at"])):
+        published, source = cfg_date, "config"
+    title, stale, language = str(info.get("title") or ""), bool(info.get("stale", False)), str(info.get("language") or "")
     chunks = []
     for page_no, page in enumerate(pages, 1):
         for n, text in enumerate(chunk_text(page, lo, hi, overlap), 1):
-            chunks.append(Chunk(chunk_id=f"{slug}-p{page_no}-{n}", document=title, page=page_no, topic=pick_topic(text), text=text,
-                                slug=slug, published_at=published.isoformat(), date_source=source))
-    return chunks, {"document": title, "pages": len(pages), "chunks": len(chunks), "published_at": published.isoformat(),
-                    "date_source": source}
+            chunks.append(Chunk(chunk_id=f"{slug}-p{page_no}-{n}", document=document, page=page_no, topic=pick_topic(text), text=text,
+                                slug=slug, published_at=published.isoformat(), date_source=source, title=title, stale=stale,
+                                language=language))
+    chars = sum(len(p) for p in pages)
+    cyr, lat = (sum(len(re.findall(rx, p)) for p in pages) for rx in (r"[а-яёА-ЯЁ]", r"[a-zA-Z]"))
+    return chunks, {"document": document, "pages": len(pages), "chunks": len(chunks), "published_at": published.isoformat(),
+                    "date_source": source, "chars": chars, "cyr_share": round(cyr / (cyr + lat), 3) if cyr + lat else 0.0,
+                    "ocr_pages": stats["ocr_pages"], "short_pages": stats["short_pages"], "stale": stale}
 
 
-def ingest_dir(src: str | Path, out: str | Path, lo: int = 500, hi: int = 800, overlap: int = 100) -> IngestReport:
+def ingest_dir(src: str | Path, out: str | Path, lo: int = 500, hi: int = 800, overlap: int = 100, *, ocr=None,
+               text_dir: str | Path | None = None, meta: dict | None = None, force_ocr: bool = False) -> IngestReport:
+    """ocr: движок (см. ocr.TesseractOCR) для страниц без текстового слоя; не задан - сканы пропускаются.
+    text_dir: куда сохранять результат OCR (<text_dir>/<документ>/<страница>.txt); по умолчанию рядом с src: <src>_text.
+    meta: {имя файла без расширения: {title, published_at, language, stale}} (load_bank_meta). Нет tesseract - OcrUnavailable."""
     src, out = Path(src), Path(out)
+    text_dir = Path(text_dir) if text_dir else src.with_name(src.name + "_text")
     rep = IngestReport(str(src))
     files = sorted(f for f in src.iterdir() if f.suffix.lower() in SUFFIXES) if src.is_dir() else []
     if not files:
@@ -170,14 +253,15 @@ def ingest_dir(src: str | Path, out: str | Path, lo: int = 500, hi: int = 800, o
         return rep
     all_chunks: list[Chunk] = []
     for f in files:
-        built = build_chunks(f, lo, hi, overlap)
+        built = build_chunks(f, lo, hi, overlap, ocr, text_dir, meta, force_ocr)
         if built is None:
             rep.skipped.append(f.name)                        # скан без текстового слоя: OCR не делаем
             continue
         all_chunks += built[0]
         rep.documents.append(built[1])
     if not all_chunks:
-        rep.message = f"В {src} {len(files)} файл(ов), но текста извлечь не удалось (сканы без текстового слоя?): индекс не изменён."
+        rep.message = (f"В {src} {len(files)} файл(ов), но текста извлечь не удалось (сканы без текстового слоя?): индекс не изменён."
+                       + ("" if ocr is not None else " OCR не подключён."))
         return rep
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8") as fh:

@@ -5,11 +5,13 @@ from __future__ import annotations
 from dataclasses import asdict
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from ..config import get_config, resolve_path
+from ..config import CONFIG_DIR, get_config, resolve_path
 from ..knowledge import BM25Retriever, Retriever, ingest_dir
+from ..knowledge.ingest import load_bank_meta
+from ..knowledge.ocr import OcrUnavailable, TesseractOCR
 
 app = FastAPI(title="ML knowledge service")
 _retriever: Retriever | None = None
@@ -61,7 +63,11 @@ def search(body: SearchIn) -> list[dict]:
 def ingest() -> dict:
     cfg = get_config()
     k = cfg["knowledge"]
-    rep = ingest_dir(bank_dir(cfg), resolve_path(cfg["paths"]["bank_chunks"]), *k["chunk_chars"], k["overlap"])
+    try:
+        rep = ingest_dir(bank_dir(cfg), resolve_path(cfg["paths"]["bank_chunks"]), *k["chunk_chars"], k["overlap"],
+                         ocr=TesseractOCR.from_config(cfg), meta=load_bank_meta(CONFIG_DIR / "bank_documents.yaml"))
+    except OcrUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e)) from None
     if rep.chunks:
         set_retriever(load_retriever(cfg))
     return asdict(rep) | {"pages": rep.pages}

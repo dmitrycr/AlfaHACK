@@ -187,7 +187,7 @@ def test_results_have_document_page_source_id_and_valid_source_ref(retriever):
     for row in QUERIES:
         for h in retriever.search(row["query"], k=5):
             r = h.to_result()
-            assert {"chunk_id", "document", "page", "topic", "score", "text", "source_id", "source_ref"} == set(r)
+            assert {"chunk_id", "document", "page", "topic", "score", "text", "source_id", "source_ref", "title", "stale"} == set(r)
             assert r["document"] and isinstance(r["page"], int) and r["page"] >= 1 and r["score"] > 0
             assert SOURCE_ID.match(r["source_id"]) and r["source_id"] == f"bank:{r['document']}#{r['page']}"
             ref = SourceRef.model_validate(r["source_ref"])                 # валидируется классом контракта

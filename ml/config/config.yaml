@@ -2,6 +2,7 @@ paths:
   data_dir: ${DATA_DIR:-data}        # по умолчанию ml/data; CSV разделитель ';', bank_analytics/ внутри
   store: .cache/ml_store.sqlite      # кеш LLM, журнал, бюджет, кеш тегов и карточек
   bank_chunks: data/bank_chunks.jsonl
+  tesseract: ${TESSERACT_CMD:-C:\Program Files\Tesseract-OCR\tesseract.exe}   # локальный OCR сканов (иначе ищется в PATH)
   profiles: data/profiles.json
   fixtures: tests/fixtures
   reports: reports
@@ -62,6 +63,7 @@ knowledge:
   overlap: 100
   k: 3
   min_score: 0.5             # подобрано по tests/fixtures/rag_queries.csv
+  ocr: {lang: "rus+eng", dpi: 300, workers: 4, timeout_s: 300}   # страницы PDF без текстового слоя; результат: <bank_analytics>_text/<документ>/<страница>.txt
   min_coverage: 0.5          # доля лемм запроса во фрагменте; TODO(align): подобрать на реальных PDF банка
 tagging:
   lead_chars: 700

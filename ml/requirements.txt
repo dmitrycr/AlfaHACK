@@ -11,6 +11,7 @@ PyYAML==6.0.3
 pytest==9.1.1
 ruff==0.17.2
 openpyxl==3.1.5
+PyMuPDF==2.0                 # рендер страниц PDF для OCR (без poppler); сам OCR - внешний Tesseract
 # опционально: лемматизация (при неудаче установки работает запасной стеммер)
 pymorphy3==2.0.6
 pymorphy3-dicts-ru==2.4.417150.4580142
