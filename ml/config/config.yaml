@@ -1,5 +1,5 @@
 paths:
-  data_dir: ${DATA_DIR}              # CSV разделитель ';', bank_analytics/ внутри
+  data_dir: ${DATA_DIR:-data}        # по умолчанию ml/data; CSV разделитель ';', bank_analytics/ внутри
   store: .cache/ml_store.sqlite      # кеш LLM, журнал, бюджет, кеш тегов и карточек
   bank_chunks: data/bank_chunks.jsonl
   profiles: data/profiles.json
@@ -48,6 +48,7 @@ knowledge:
   overlap: 100
   k: 3
   min_score: 0.5             # подобрано по tests/fixtures/rag_queries.csv
+  min_coverage: 0.5          # доля лемм запроса во фрагменте; TODO(align): подобрать на реальных PDF банка
 tagging:
   lead_chars: 700
   min_text_chars: 20

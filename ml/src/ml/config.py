@@ -12,12 +12,12 @@ import yaml
 ML_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_DIR = ML_ROOT / "config"
 
-_ENV_RE = re.compile(r"\$\{([A-Z0-9_]+)\}")
+_ENV_RE = re.compile(r"\$\{([A-Z0-9_]+)(?::-([^}]*))?\}")      # ${VAR} или ${VAR:-значение по умолчанию}
 
 
 def _expand(value: Any) -> Any:
     if isinstance(value, str):
-        return _ENV_RE.sub(lambda m: os.environ.get(m.group(1), ""), value)
+        return _ENV_RE.sub(lambda m: os.environ.get(m.group(1)) or m.group(2) or "", value)
     if isinstance(value, dict):
         return {k: _expand(v) for k, v in value.items()}
     if isinstance(value, list):

@@ -26,7 +26,7 @@ uvicorn ml.services.agent_app:app --port 8003     # ещё: ranking_app (8001), 
 | `LLM_MODE` | `mock` (по умолчанию) или `http` |
 | `LLM_API_KEY` | ключ API, только из окружения; в коде, логах и конфиге не хранится |
 | `LLM_BASE_URL` | адрес OpenAI-совместимого API (`POST {base}/chat/completions`) — `TODO(align)` |
-| `DATA_DIR` | каталог с `df_Uid_data_hack.csv`, `df_Uid_payment_hack.csv`, `df_Fid_Uid_link_hack.csv`, `bank_analytics/` |
+| `DATA_DIR` | каталог с `df_Uid_data_hack.csv`, `df_Uid_payment_hack.csv`, `df_Fid_Uid_link_hack.csv`, `bank_analytics/` (по умолчанию `data`, т.е. `ml/data`) |
 | `PROFILE_SERVICE_URL`, `EVENT_SERVICE_URL`, `NEWS_SERVICE_URL`, `KNOWLEDGE_SERVICE_URL` | HTTP-клиенты портов; не заданы — фикстурные заглушки из `tests/fixtures/` |
 | `COMPANY_SERVICE_ADDR` | адрес gRPC Company Service (по умолчанию `company-service:9090`) |
 | `COMPANY_SIGNED_CONTEXT` | «подписанный контекст» для Company Service, только из окружения, в логи не пишется; `TODO(align)`: что это и в каком заголовке слать (`company_service.signed_context_header`) неизвестно |
@@ -83,6 +83,22 @@ uvicorn ml.services.tagging_app:app --port 8101                                 
 curl -X POST localhost:8101/tag -H 'content-type: application/json' -d '{"event_id":"e1","title":"...","text":"...","published_at":"2026-10-20T10:00:00+03:00","source":"Издание","url":"https://..."}'
 ```
 Ответ `/tag` и элементов `/tag/batch` (тело и ответ — массивы): `{"event": Event | null, "is_noise": bool, "noise_reason": str | null, "suspicious": bool}`; `503`, если LLM недоступен или исчерпан бюджет.
+
+## Поиск по аналитике банка (шаг 3 пятничного ТЗ)
+
+`src/ml/knowledge/`: `ingest.py` (текст постранично: `pypdf`, при пустом результате `pdftotext`; txt - страницы разделяет ``), `chunker.py` (фрагменты 500-800 символов, перекрытие 100, по абзацам и предложениям,
+фрагмент не пересекает страницу), `retriever.py` (интерфейс `Retriever.search(query, k=3, topics=None)` и `BM25Retriever` на `rank_bm25`; заменяем на эмбеддинги), `tokenizer.py` (`pymorphy3`, иначе обрезка окончаний).
+Источник: `$DATA_DIR/bank_analytics/` (по умолчанию `ml/data/bank_analytics/`, PDF или txt); индекс: `paths.bank_chunks` (`bank_chunks.jsonl`: `chunk_id, document, page, topic, text` + `slug, published_at, date_source`).
+Нет файлов - загрузка честно сообщает об этом и ничего не меняет, поиск возвращает `[]`. Тесты идут на `tests/fixtures/bank_analytics/` (3 коротких текста про ставку, инфляцию и золото) и `tests/fixtures/rag_queries.csv`.
+Порог: лучший результат слабее `knowledge.min_score` или фрагмент, где нашлось меньше `knowledge.min_coverage` лемм запроса, отбрасываются (пусто = «аналитики нет»). `TODO(align)`: подобрать пороги на реальных PDF.
+Результат `/search`: `{chunk_id, document, page, topic, score, text, source_id = "bank:<документ>#<страница>", source_ref}`; `source_ref` - `SourceRef` контракта
+(`url = https://bank.local/analytics/<slug>` - заглушка, `name` = имя файла, `published_at` = дата из текста, имени файла или изменения файла, `kind = bank_analytics`, `fragment_id = <slug>#<страница>`).
+
+```bash
+python scripts/ingest_bank_docs.py                                                   # DATA_DIR/bank_analytics -> bank_chunks.jsonl
+uvicorn ml.services.knowledge_app:app --port 8102                                    # из каталога src или с PYTHONPATH=src
+curl -X POST localhost:8102/search -H 'content-type: application/json' -d '{"query":"ключевая ставка","k":3}'
+```
 
 ## Формат Company Service
 
